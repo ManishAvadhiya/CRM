@@ -85,6 +85,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:3000",
+            "https://fuzzy-fiesta-9795vvg74r56h6rr-3000.app.github.dev",
             "https://fuzzy-fiesta-9795vvg74r56h6rr-5000.app.github.dev"
         )
         .AllowAnyHeader()

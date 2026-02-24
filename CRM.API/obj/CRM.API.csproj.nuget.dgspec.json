@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/Users/manishavadhiya/Documents/CRM/CRM.API/CRM.API.csproj": {}
+    "/workspaces/CRM/CRM.API/CRM.API.csproj": {}
   },
   "projects": {
-    "/Users/manishavadhiya/Documents/CRM/CRM.API/CRM.API.csproj": {
+    "/workspaces/CRM/CRM.API/CRM.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/manishavadhiya/Documents/CRM/CRM.API/CRM.API.csproj",
+        "projectUniqueName": "/workspaces/CRM/CRM.API/CRM.API.csproj",
         "projectName": "CRM.API",
-        "projectPath": "/Users/manishavadhiya/Documents/CRM/CRM.API/CRM.API.csproj",
-        "packagesPath": "/Users/manishavadhiya/.nuget/packages/",
-        "outputPath": "/Users/manishavadhiya/Documents/CRM/CRM.API/obj/",
+        "projectPath": "/workspaces/CRM/CRM.API/CRM.API.csproj",
+        "packagesPath": "/home/codespace/.nuget/packages/",
+        "outputPath": "/workspaces/CRM/CRM.API/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/manishavadhiya/.nuget/NuGet/NuGet.Config"
+          "/home/codespace/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,7 +37,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -89,6 +90,20 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.22, 8.0.22]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[8.0.22, 8.0.22]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.22, 8.0.22]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -97,7 +112,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

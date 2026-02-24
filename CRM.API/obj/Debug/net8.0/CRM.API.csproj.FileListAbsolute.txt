@@ -149,8 +149,8 @@
 /Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Microsoft.OpenApi.dll
 /Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/MimeKit.dll
 /Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Mono.TextTemplating.dll
-/Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/MySqlConnector.dll
-/Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Pomelo.EntityFrameworkCore.MySql.dll
+/Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Npgsql.dll
+/Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
 /Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.Swagger.dll
 /Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /Users/manishavadhiya/Documents/CRM/CRM.API/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -220,6 +220,7 @@
 /Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/CRM.API.csproj.CoreCompileInputs.cache
 /Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/CRM.API.MvcApplicationPartsAssemblyInfo.cs
 /Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/CRM.API.MvcApplicationPartsAssemblyInfo.cache
+/Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/CRM.API.sourcelink.json
 /Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/staticwebassets.build.json
 /Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/staticwebassets.development.json
 /Users/manishavadhiya/Documents/CRM/CRM.API/obj/Debug/net8.0/staticwebassets/msbuild.CRM.API.Microsoft.AspNetCore.StaticWebAssets.props

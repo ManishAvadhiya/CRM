@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "OYCcZVbzcQM=",
+  "dgSpecHash": "JpkD0uXiSs8=",
   "success": true,
   "projectFilePath": "/Users/manishavadhiya/Documents/CRM/CRM.API/CRM.API.csproj",
   "expectedPackageFiles": [
@@ -43,8 +43,8 @@
     "/Users/manishavadhiya/.nuget/packages/microsoft.openapi/1.2.3/microsoft.openapi.1.2.3.nupkg.sha512",
     "/Users/manishavadhiya/.nuget/packages/mimekit/4.3.0/mimekit.4.3.0.nupkg.sha512",
     "/Users/manishavadhiya/.nuget/packages/mono.texttemplating/2.2.1/mono.texttemplating.2.2.1.nupkg.sha512",
-    "/Users/manishavadhiya/.nuget/packages/mysqlconnector/2.3.5/mysqlconnector.2.3.5.nupkg.sha512",
-    "/Users/manishavadhiya/.nuget/packages/pomelo.entityframeworkcore.mysql/8.0.0/pomelo.entityframeworkcore.mysql.8.0.0.nupkg.sha512",
+    "/Users/manishavadhiya/.nuget/packages/npgsql/8.0.0/npgsql.8.0.0.nupkg.sha512",
+    "/Users/manishavadhiya/.nuget/packages/npgsql.entityframeworkcore.postgresql/8.0.0/npgsql.entityframeworkcore.postgresql.8.0.0.nupkg.sha512",
     "/Users/manishavadhiya/.nuget/packages/swashbuckle.aspnetcore/6.5.0/swashbuckle.aspnetcore.6.5.0.nupkg.sha512",
     "/Users/manishavadhiya/.nuget/packages/swashbuckle.aspnetcore.swagger/6.5.0/swashbuckle.aspnetcore.swagger.6.5.0.nupkg.sha512",
     "/Users/manishavadhiya/.nuget/packages/swashbuckle.aspnetcore.swaggergen/6.5.0/swashbuckle.aspnetcore.swaggergen.6.5.0.nupkg.sha512",

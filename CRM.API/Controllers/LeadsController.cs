@@ -36,9 +36,21 @@ public class LeadsController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
             var query = _context.Leads
                 .Include(l => l.AssignedToUser)
+                .Include(l => l.CreatedByUser)
                 .AsQueryable();
+
+            // Role-based visibility
+            if (userRole == "Partner")
+            {
+                // Partners can only see their own leads
+                query = query.Where(l => l.CreatedBy == currentUserId);
+            }
+            // ManagementAdmin and Marketing can see all leads
 
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<LeadStatus>(status, out var leadStatus))
             {
@@ -63,14 +75,24 @@ public class LeadsController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
             var lead = await _context.Leads
                 .Include(l => l.AssignedToUser)
                 .Include(l => l.ConvertedCustomer)
+                .Include(l => l.CreatedByUser)
                 .FirstOrDefaultAsync(l => l.LeadId == id);
 
             if (lead == null)
             {
                 return NotFound(ApiResponse<Lead>.ErrorResponse("Lead not found"));
+            }
+
+            // Check visibility for Partner - they can only see their own leads
+            if (userRole == "Partner" && lead.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             return Ok(ApiResponse<Lead>.SuccessResponse(lead));
@@ -87,7 +109,16 @@ public class LeadsController : ControllerBase
     {
         try
         {
-            lead.CreatedBy = GetCurrentUserId();
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            // Only Marketing, ManagementAdmin, and Partner can create leads
+            if (userRole != "Marketing" && userRole != "ManagementAdmin" && userRole != "Partner")
+            {
+                return Forbid();
+            }
+
+            lead.CreatedBy = currentUserId;
             lead.CreatedAt = DateTime.UtcNow;
 
             _context.Leads.Add(lead);
@@ -107,7 +138,7 @@ public class LeadsController : ControllerBase
                 );
             }
 
-            _logger.LogInformation($"Lead created: {lead.LeadId}");
+            _logger.LogInformation($"Lead created by {userRole} user {currentUserId}: {lead.LeadId}");
 
             return CreatedAtAction(nameof(GetById), new { id = lead.LeadId }, 
                 ApiResponse<Lead>.SuccessResponse(lead, "Lead created successfully"));
@@ -124,11 +155,21 @@ public class LeadsController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
             var lead = await _context.Leads.FindAsync(id);
             
             if (lead == null)
             {
                 return NotFound(ApiResponse<Lead>.ErrorResponse("Lead not found"));
+            }
+
+            // Role-based update restrictions
+            // Partners can only update their own leads
+            if (userRole == "Partner" && lead.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             // Update properties
@@ -149,7 +190,7 @@ public class LeadsController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Lead updated: {lead.LeadId}");
+            _logger.LogInformation($"Lead {id} updated by {userRole} user {currentUserId}");
 
             return Ok(ApiResponse<Lead>.SuccessResponse(lead, "Lead updated successfully"));
         }

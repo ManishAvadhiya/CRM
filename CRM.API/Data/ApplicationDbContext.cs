@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Subscription> Subscriptions { get; set; }
     public DbSet<Activity> Activities { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<PasswordReset> PasswordResets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,13 @@ public class ApplicationDbContext : DbContext
 
         // Enum → string conversions
         modelBuilder.Entity<User>().Property(u => u.Role).HasConversion<string>();
+
+        // User relationships
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.CreatedByUser)
+            .WithMany(u => u.CreatedUsers)
+            .HasForeignKey(u => u.CreatedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Lead>().Property(l => l.Status).HasConversion<string>();
         modelBuilder.Entity<Lead>().Property(l => l.LeadSource).HasConversion<string>();
@@ -134,7 +142,7 @@ public class ApplicationDbContext : DbContext
                 Name = "System Admin",
                 Email = "admin@crm.com",
                 PasswordHash = "$2a$12$0Gr/hdSsyjDE0wyTeg09BOi8jWohJ44vcwzEVcns4jGI81yqZZ0Wu",
-                Role = UserRole.Admin,
+                Role = UserRole.ManagementAdmin,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

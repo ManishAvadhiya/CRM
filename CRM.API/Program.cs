@@ -98,6 +98,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
 
 // Logging
 builder.Logging.ClearProviders();
@@ -127,7 +128,7 @@ using (var scope = app.Services.CreateScope())
                 Name = "System Admin",
                 Email = "admin@crm.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-                Role = CRM.API.Models.UserRole.Admin,
+                Role = CRM.API.Models.UserRole.ManagementAdmin,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

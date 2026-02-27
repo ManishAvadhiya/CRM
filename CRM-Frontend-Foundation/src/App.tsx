@@ -12,6 +12,8 @@ import OrdersPage from './pages/OrdersPage.tsx';
 import SubscriptionsPage from './pages/SubscriptionsPage.tsx';
 import ProductVariantsPage from './pages/ProductVariantsPage.tsx';
 import NotificationsPage from './pages/NotificationsPage.tsx';
+import { AccountDetailsPage } from './pages/AccountDetailsPage';
+import { LeadDetailPage } from './pages/LeadDetailPage';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -52,11 +54,13 @@ function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="leads" element={<LeadsPage />} />
+            <Route path="leads/:id" element={<LeadDetailPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="products" element={<ProductVariantsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="account" element={<AccountDetailsPage />} />
           </Route>
         </Routes>
         <Toaster position="top-right" />

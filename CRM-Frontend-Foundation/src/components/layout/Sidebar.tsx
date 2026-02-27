@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Package,
   Bell,
+  User,
 } from 'lucide-react';
 import { notificationsApi } from '@/services';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Subscriptions', to: '/subscriptions', icon: RefreshCw },
   { name: 'Products', to: '/products', icon: Package },
   { name: 'Notifications', to: '/notifications', icon: Bell },
+  { name: 'Account', to: '/account', icon: User },
 ];
 
 export default function Sidebar() {

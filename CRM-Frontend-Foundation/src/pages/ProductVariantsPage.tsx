@@ -32,55 +32,60 @@ export default function ProductVariantsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">Product Variants</h1>
-          <p className="text-muted-foreground">View all available product variants</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={showInactiveOnly ? 'default' : 'outline'}
-            onClick={() => setShowInactiveOnly(!showInactiveOnly)}
-          >
-            {showInactiveOnly ? 'Show Active' : 'Show Inactive'}
-          </Button>
-        </div>
+    <div className="p-8 space-y-6 min-h-full">
+      {/* Page Header */}
+      <div className="animate-in fade-in duration-500">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Product Variants</h1>
+        <p className="text-slate-600 mt-2">View all available product offerings and pricing</p>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          variant={showInactiveOnly ? 'default' : 'outline'}
+          onClick={() => setShowInactiveOnly(!showInactiveOnly)}
+          className={`transition-all ${
+            showInactiveOnly
+              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+              : 'hover:bg-slate-50'
+          }`}
+        >
+          {showInactiveOnly ? 'Show Active' : 'Show Inactive'}
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredVariants?.map((variant) => (
-          <Card key={variant.variantId} className={!variant.isActive ? 'opacity-60' : ''}>
+          <Card key={variant.variantId} className={`rounded-xl border-2 border-slate-200 hover:shadow-lg transition-all duration-300 ${!variant.isActive ? 'opacity-60' : 'hover:border-blue-300'}`}>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{variant.variantName}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{variant.description}</p>
+                  <CardTitle className="text-lg bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{variant.variantName}</CardTitle>
+                  <p className="text-sm text-slate-600 mt-1">{variant.description}</p>
                 </div>
-                <Badge variant={variant.isActive ? 'default' : 'secondary'}>
-                  {variant.isActive ? 'Active' : 'Inactive'}
+                <Badge variant={variant.isActive ? 'default' : 'secondary'} className={`${variant.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {variant.isActive ? '✓ Active' : '✗ Inactive'}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Single User:</span>
-                    <p className="font-semibold text-lg">
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <span className="text-slate-600">Single User:</span>
+                    <p className="font-bold text-blue-600 text-lg">
                       {formatCurrency(variant.basePriceSingleUser)}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Multi User:</span>
-                    <p className="font-semibold text-lg">
+                  <div className="bg-cyan-50 rounded-lg p-3">
+                    <span className="text-slate-600">Multi User:</span>
+                    <p className="font-bold text-cyan-600 text-lg">
                       {formatCurrency(variant.basePriceMultiUser)}
                     </p>
                   </div>
                 </div>
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground mb-1">Annual Subscription Fee</p>
-                  <p className="font-bold text-lg">
+                <div className="pt-3 border-t border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-3">
+                  <p className="text-xs text-slate-600 mb-1 font-semibold">Annual Subscription Fee</p>
+                  <p className="font-bold text-lg text-slate-900">
                     {formatCurrency(variant.annualSubscriptionFee)}
                   </p>
                 </div>

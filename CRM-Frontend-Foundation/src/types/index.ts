@@ -20,11 +20,46 @@ export interface LoginResponse {
   token: string;
 }
 
+// Auth - Password Reset types
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  otp: string;
+  newPassword: string;
+}
+
+// Auth - Password Change types
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+// User Profile types
+export interface UserProfile {
+  userId: number;
+  name: string;
+  email: string;
+  role: string;
+  phone?: string;
+  profileImage?: string;
+  isActive: boolean;
+  lastLogin?: string;
+  createdAt: string;
+}
+
 export interface User {
   userId: number;
   name: string;
   email: string;
-  role: 'Admin' | 'SalesPerson';
+  role: 'ManagementAdmin' | 'Marketing' | 'Partner';
   phone?: string;
   profileImage?: string;
   isActive: boolean;
@@ -33,7 +68,7 @@ export interface User {
 }
 
 // Lead types
-export type LeadStatus = 'New' | 'Contacted' | 'Qualified' | 'Converted' | 'Lost';
+export type LeadStatus = 'New' | 'Demo' | 'Converted' | 'Lost';
 export type LeadSource = 'Website' | 'Referral' | 'ColdCall' | 'Campaign' | 'SocialMedia' | 'Other';
 export type LeadRating = 'Hot' | 'Warm' | 'Cold';
 
@@ -59,6 +94,54 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   assignedToUser?: User;
+}
+
+// Lead History types
+export type HistoryChangeType = 
+  | 'StatusChanged' 
+  | 'NoteAdded' 
+  | 'AssignmentChanged' 
+  | 'DetailsAdded' 
+  | 'RatingChanged' 
+  | 'ConvertedToCustomer' 
+  | 'Other';
+
+export interface LeadHistory {
+  historyId: number;
+  leadId: number;
+  changedByUserId: number;
+  changedByUserName: string;
+  changeType: HistoryChangeType;
+  oldValue?: string;
+  newValue?: string;
+  description?: string;
+  changedAt: string;
+}
+
+export interface LeadDetailResponse {
+  leadId: number;
+  companyName: string;
+  contactName: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  industry?: string;
+  leadSource?: string;
+  status: string;
+  rating?: string;
+  assignedTo?: number;
+  assignedToName?: string;
+  estimatedValue?: number;
+  expectedCloseDate?: string;
+  notes?: string;
+  convertedToCustomerId?: number;
+  convertedDate?: string;
+  lostReason?: string;
+  createdBy?: number;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt: string;
+  history: LeadHistory[];
 }
 
 // Customer types
@@ -244,8 +327,9 @@ export interface Notification {
 export interface DashboardStats {
   totalLeads: number;
   newLeads: number;
-  qualifiedLeads: number;
+  demoLeads: number;
   convertedLeads: number;
+  lostLeads: number;
   leadConversionRate: number;
   totalCustomers: number;
   totalOrders: number;

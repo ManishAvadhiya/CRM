@@ -233,4 +233,87 @@ public class UsersController : ControllerBase
             return StatusCode(500, ApiResponse<string>.ErrorResponse("An error occurred"));
         }
     }
+
+    /// <summary>
+    /// Get current logged-in user profile
+    /// </summary>
+    [HttpGet("me")]
+    public async Task<ActionResult<ApiResponse<UserProfileDto>>> GetCurrentUserProfile()
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var user = await _context.Users.FindAsync(currentUserId);
+
+            if (user == null)
+            {
+                return NotFound(ApiResponse<UserProfileDto>.ErrorResponse("User not found"));
+            }
+
+            var profile = new UserProfileDto
+            {
+                UserId = user.UserId,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Phone = user.Phone,
+                ProfileImage = user.ProfileImage,
+                IsActive = user.IsActive,
+                LastLogin = user.LastLogin,
+                CreatedAt = user.CreatedAt
+            };
+
+            return Ok(ApiResponse<UserProfileDto>.SuccessResponse(profile));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error fetching user profile: {ex.Message}");
+            return StatusCode(500, ApiResponse<UserProfileDto>.ErrorResponse("An error occurred"));
+        }
+    }
+
+    /// <summary>
+    /// Change password for current user
+    /// </summary>
+    [HttpPost("change-password")]
+    public async Task<ActionResult<ApiResponse<ChangePasswordResponseDto>>> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var user = await _context.Users.FindAsync(currentUserId);
+
+            if (user == null)
+            {
+                return NotFound(ApiResponse<ChangePasswordResponseDto>.ErrorResponse("User not found"));
+            }
+
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            {
+                return BadRequest(ApiResponse<ChangePasswordResponseDto>.ErrorResponse("Current password is incorrect"));
+            }
+
+            // Hash new password
+            var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.PasswordHash = newPasswordHash;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var response = new ChangePasswordResponseDto
+            {
+                Success = true,
+                Message = "Password changed successfully"
+            };
+
+            _logger.LogInformation($"Password changed for user {user.Email}");
+            return Ok(ApiResponse<ChangePasswordResponseDto>.SuccessResponse(response, "Password changed successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error changing password: {ex.Message}");
+            return StatusCode(500, ApiResponse<ChangePasswordResponseDto>.ErrorResponse("An error occurred while changing password"));
+        }
+    }
 }

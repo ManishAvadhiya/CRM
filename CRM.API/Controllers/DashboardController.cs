@@ -30,8 +30,9 @@ public class DashboardController : ControllerBase
             {
                 TotalLeads = await _context.Leads.CountAsync(),
                 NewLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.New),
-                QualifiedLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Qualified),
+                DemoLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Demo),
                 ConvertedLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Converted),
+                LostLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Lost),
                 
                 TotalCustomers = await _context.Customers.CountAsync(),
                 
@@ -99,8 +100,9 @@ public class DashboardStats
 {
     public int TotalLeads { get; set; }
     public int NewLeads { get; set; }
-    public int QualifiedLeads { get; set; }
+    public int DemoLeads { get; set; }
     public int ConvertedLeads { get; set; }
+    public int LostLeads { get; set; }
     public decimal LeadConversionRate { get; set; }
     
     public int TotalCustomers { get; set; }

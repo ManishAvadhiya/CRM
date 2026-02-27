@@ -297,4 +297,265 @@ public class LeadsController : ControllerBase
             return StatusCode(500, ApiResponse<Customer>.ErrorResponse("Error converting lead"));
         }
     }
+
+    /// <summary>
+    /// Get lead with complete history
+    /// </summary>
+    [HttpGet("{id}/with-history")]
+    public async Task<ActionResult<ApiResponse<LeadDetailResponseDto>>> GetWithHistory(int id)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var lead = await _context.Leads
+                .Include(l => l.AssignedToUser)
+                .Include(l => l.CreatedByUser)
+                .FirstOrDefaultAsync(l => l.LeadId == id);
+
+            if (lead == null)
+            {
+                return NotFound(ApiResponse<LeadDetailResponseDto>.ErrorResponse("Lead not found"));
+            }
+
+            // Check visibility for Partner
+            if (userRole == "Partner" && lead.CreatedBy != currentUserId)
+            {
+                return Forbid();
+            }
+
+            // Get complete history
+            var history = await _context.LeadHistories
+                .Where(lh => lh.LeadId == id)
+                .Include(lh => lh.ChangedByUser)
+                .OrderByDescending(lh => lh.ChangedAt)
+                .Select(lh => new LeadHistoryDto
+                {
+                    HistoryId = lh.HistoryId,
+                    LeadId = lh.LeadId,
+                    ChangedByUserId = lh.ChangedByUserId,
+                    ChangedByUserName = lh.ChangedByUser!.Name,
+                    ChangeType = lh.ChangeType,
+                    OldValue = lh.OldValue,
+                    NewValue = lh.NewValue,
+                    Description = lh.Description,
+                    ChangedAt = lh.ChangedAt
+                })
+                .ToListAsync();
+
+            var response = new LeadDetailResponseDto
+            {
+                LeadId = lead.LeadId,
+                CompanyName = lead.CompanyName,
+                ContactName = lead.ContactName,
+                Email = lead.Email,
+                Phone = lead.Phone,
+                Website = lead.Website,
+                Industry = lead.Industry,
+                LeadSource = lead.LeadSource?.ToString(),
+                Status = lead.Status.ToString(),
+                Rating = lead.Rating?.ToString(),
+                AssignedTo = lead.AssignedTo,
+                AssignedToName = lead.AssignedToUser?.Name,
+                EstimatedValue = lead.EstimatedValue,
+                ExpectedCloseDate = lead.ExpectedCloseDate,
+                Notes = lead.Notes,
+                ConvertedToCustomerId = lead.ConvertedToCustomerId,
+                ConvertedDate = lead.ConvertedDate,
+                LostReason = lead.LostReason,
+                CreatedBy = lead.CreatedBy,
+                CreatedByName = lead.CreatedByUser?.Name,
+                CreatedAt = lead.CreatedAt,
+                UpdatedAt = lead.UpdatedAt,
+                History = history
+            };
+
+            return Ok(ApiResponse<LeadDetailResponseDto>.SuccessResponse(response));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error fetching lead with history: {ex.Message}");
+            return StatusCode(500, ApiResponse<LeadDetailResponseDto>.ErrorResponse("Error fetching lead"));
+        }
+    }
+
+    /// <summary>
+    /// Add a note/detail to lead (without changing status)
+    /// </summary>
+    [HttpPost("{id}/add-note")]
+    public async Task<ActionResult<ApiResponse<LeadHistoryDto>>> AddNote(int id, [FromBody] AddLeadNoteRequestDto request)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var lead = await _context.Leads.FindAsync(id);
+            if (lead == null)
+            {
+                return NotFound(ApiResponse<LeadHistoryDto>.ErrorResponse("Lead not found"));
+            }
+
+            // Check permission for Partner
+            if (userRole == "Partner" && lead.CreatedBy != currentUserId)
+            {
+                return Forbid();
+            }
+
+            // Create history entry for note
+            var history = new LeadHistory
+            {
+                LeadId = id,
+                ChangedByUserId = currentUserId,
+                ChangeType = "NoteAdded",
+                Description = request.Note,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            _context.LeadHistories.Add(history);
+            await _context.SaveChangesAsync();
+
+            var user = await _context.Users.FindAsync(currentUserId);
+            var historyDto = new LeadHistoryDto
+            {
+                HistoryId = history.HistoryId,
+                LeadId = history.LeadId,
+                ChangedByUserId = history.ChangedByUserId,
+                ChangedByUserName = user?.Name ?? "Unknown",
+                ChangeType = history.ChangeType,
+                Description = history.Description,
+                ChangedAt = history.ChangedAt
+            };
+
+            _logger.LogInformation($"Note added to lead {id} by user {currentUserId}");
+            return Ok(ApiResponse<LeadHistoryDto>.SuccessResponse(historyDto, "Note added successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error adding note to lead: {ex.Message}");
+            return StatusCode(500, ApiResponse<LeadHistoryDto>.ErrorResponse("Error adding note"));
+        }
+    }
+
+    /// <summary>
+    /// Update lead status and create history entry
+    /// </summary>
+    [HttpPut("{id}/update-status")]
+    public async Task<ActionResult<ApiResponse<LeadHistoryDto>>> UpdateStatus(int id, [FromBody] UpdateLeadStatusRequestDto request)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var lead = await _context.Leads.FindAsync(id);
+            if (lead == null)
+            {
+                return NotFound(ApiResponse<LeadHistoryDto>.ErrorResponse("Lead not found"));
+            }
+
+            // Check permission for Partner 
+            if (userRole == "Partner" && lead.CreatedBy != currentUserId)
+            {
+                return Forbid();
+            }
+
+            if (!Enum.TryParse<LeadStatus>(request.Status, out var newStatus))
+            {
+                return BadRequest(ApiResponse<LeadHistoryDto>.ErrorResponse("Invalid lead status"));
+            }
+
+            var oldStatus = lead.Status.ToString();
+            lead.Status = newStatus;
+            lead.UpdatedAt = DateTime.UtcNow;
+
+            // Create history entry
+            var history = new LeadHistory
+            {
+                LeadId = id,
+                ChangedByUserId = currentUserId,
+                ChangeType = "StatusChanged",
+                OldValue = oldStatus,
+                NewValue = request.Status,
+                Description = request.Notes,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            _context.LeadHistories.Add(history);
+            await _context.SaveChangesAsync();
+
+            var user = await _context.Users.FindAsync(currentUserId);
+            var historyDto = new LeadHistoryDto
+            {
+                HistoryId = history.HistoryId,
+                LeadId = history.LeadId,
+                ChangedByUserId = history.ChangedByUserId,
+                ChangedByUserName = user?.Name ?? "Unknown",
+                ChangeType = history.ChangeType,
+                OldValue = history.OldValue,
+                NewValue = history.NewValue,
+                Description = history.Description,
+                ChangedAt = history.ChangedAt
+            };
+
+            _logger.LogInformation($"Lead {id} status changed from {oldStatus} to {newStatus} by user {currentUserId}");
+            return Ok(ApiResponse<LeadHistoryDto>.SuccessResponse(historyDto, "Lead status updated successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error updating lead status: {ex.Message}");
+            return StatusCode(500, ApiResponse<LeadHistoryDto>.ErrorResponse("Error updating lead status"));
+        }
+    }
+
+    /// <summary>
+    /// Get lead history timeline
+    /// </summary>
+    [HttpGet("{id}/history")]
+    public async Task<ActionResult<ApiResponse<List<LeadHistoryDto>>>> GetHistory(int id)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var lead = await _context.Leads.FindAsync(id);
+            if (lead == null)
+            {
+                return NotFound(ApiResponse<List<LeadHistoryDto>>.ErrorResponse("Lead not found"));
+            }
+
+            // Check visibility for Partner
+            if (userRole == "Partner" && lead.CreatedBy != currentUserId)
+            {
+                return Forbid();
+            }
+
+            var history = await _context.LeadHistories
+                .Where(lh => lh.LeadId == id)
+                .Include(lh => lh.ChangedByUser)
+                .OrderByDescending(lh => lh.ChangedAt)
+                .Select(lh => new LeadHistoryDto
+                {
+                    HistoryId = lh.HistoryId,
+                    LeadId = lh.LeadId,
+                    ChangedByUserId = lh.ChangedByUserId,
+                    ChangedByUserName = lh.ChangedByUser!.Name,
+                    ChangeType = lh.ChangeType,
+                    OldValue = lh.OldValue,
+                    NewValue = lh.NewValue,
+                    Description = lh.Description,
+                    ChangedAt = lh.ChangedAt
+                })
+                .ToListAsync();
+
+            return Ok(ApiResponse<List<LeadHistoryDto>>.SuccessResponse(history));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error fetching lead history: {ex.Message}");
+            return StatusCode(500, ApiResponse<List<LeadHistoryDto>>.ErrorResponse("Error fetching history"));
+        }
+    }
 }

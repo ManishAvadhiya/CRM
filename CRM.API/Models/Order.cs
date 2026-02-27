@@ -8,7 +8,6 @@ public class Order : BaseEntity
     [Key]
     public int OrderId { get; set; }
     
-    [Required]
     [MaxLength(50)]
     public string OrderNumber { get; set; } = string.Empty;
     
@@ -77,9 +76,9 @@ public class Order : BaseEntity
     public int CreatedBy { get; set; }
     
     // Navigation Properties
-    public Customer Customer { get; set; } = null!;
-    public ProductVariant ProductVariant { get; set; } = null!;
-    public User CreatedByUser { get; set; } = null!;
+    public Customer? Customer { get; set; }
+    public ProductVariant? ProductVariant { get; set; }
+    public User? CreatedByUser { get; set; }
     public Subscription? Subscription { get; set; }
 }
 

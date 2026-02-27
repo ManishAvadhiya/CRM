@@ -77,8 +77,7 @@ public enum LeadSource
 public enum LeadStatus
 {
     New,
-    Contacted,
-    Qualified,
+    Demo,
     Converted,
     Lost
 }

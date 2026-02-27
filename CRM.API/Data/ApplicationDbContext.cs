@@ -12,6 +12,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Lead> Leads { get; set; }
+    public DbSet<LeadHistory> LeadHistories { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<ProductVariant> ProductVariants { get; set; }
     public DbSet<Order> Orders { get; set; }
@@ -73,6 +74,19 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(l => l.ConvertedToCustomerId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Relationship: LeadHistory → Lead and User
+        modelBuilder.Entity<LeadHistory>()
+            .HasOne(lh => lh.Lead)
+            .WithMany()
+            .HasForeignKey(lh => lh.LeadId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LeadHistory>()
+            .HasOne(lh => lh.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(lh => lh.ChangedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Relationship: Order → Customer
         modelBuilder.Entity<Order>()

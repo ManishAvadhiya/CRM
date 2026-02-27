@@ -131,3 +131,32 @@ public class CreateUserResponseDto
     public string Role { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }
+
+public class UserProfileDto
+{
+    public int UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? ProfileImage { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? LastLogin { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class ChangePasswordRequestDto
+{
+    [Required]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(6)]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class ChangePasswordResponseDto
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+}

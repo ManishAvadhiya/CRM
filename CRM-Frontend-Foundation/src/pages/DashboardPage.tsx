@@ -38,66 +38,75 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to your CRM dashboard</p>
+    <div className="p-8 space-y-8 min-h-full">
+      {/* Page Header */}
+      <div className="animate-in fade-in duration-500">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Dashboard</h1>
+        <p className="text-slate-600 mt-2">Your CRM overview and key metrics</p>
       </div>
 
       {/* Key Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Leads */}
-        <Card>
+        <Card className="rounded-xl border-2 border-slate-200 hover:shadow-lg transition-all duration-300 hover:border-blue-300 animate-in fade-in slide-in-from-bottom-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Leads</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalLeads || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.qualifiedLeads || 0} qualified | {stats?.convertedLeads || 0} converted
+            <div className="text-3xl font-bold text-slate-900">{stats?.totalLeads || 0}</div>
+            <p className="text-xs text-slate-600 mt-1">
+              {stats?.qualifiedLeads || 0} qualified • {stats?.convertedLeads || 0} converted
             </p>
           </CardContent>
         </Card>
 
         {/* Revenue */}
-        <Card>
+        <Card className="rounded-xl border-2 border-slate-200 hover:shadow-lg transition-all duration-300 hover:border-green-300 animate-in fade-in slide-in-from-bottom-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Revenue</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-3xl font-bold text-slate-900">
               {formatCurrency(stats?.totalRevenue || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-600 mt-1">
               From {stats?.confirmedOrders || 0} confirmed orders
             </p>
           </CardContent>
         </Card>
 
         {/* Subscriptions */}
-        <Card>
+        <Card className="rounded-xl border-2 border-slate-200 hover:shadow-lg transition-all duration-300 hover:border-cyan-300 animate-in fade-in slide-in-from-bottom-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Active Subscriptions</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
+              <RefreshCw className="h-5 w-5 text-cyan-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.activeSubscriptions || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-slate-900">{stats?.activeSubscriptions || 0}</div>
+            <p className="text-xs text-slate-600 mt-1">
               {stats?.upcomingRenewals30Days || 0} renewals (30 days)
             </p>
           </CardContent>
         </Card>
 
         {/* Customers */}
-        <Card>
+        <Card className="rounded-xl border-2 border-slate-200 hover:shadow-lg transition-all duration-300 hover:border-amber-300 animate-in fade-in slide-in-from-bottom-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-slate-700">Total Customers</CardTitle>
+            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+              <ShoppingCart className="h-5 w-5 text-amber-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalCustomers || 0}</div>
+            <div className="text-3xl font-bold text-slate-900">{stats?.totalCustomers || 0}</div>
             <p className="text-xs text-muted-foreground">
               {stats?.leadConversionRate?.toFixed(1) || 0}% conversion rate
             </p>
@@ -242,28 +251,29 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activities */}
-      <Card>
+      <Card className="rounded-xl border-2 border-slate-200 hover:shadow-lg transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-lg">Recent Activities</CardTitle>
+          <CardTitle className="text-lg text-slate-900">Recent Activities</CardTitle>
         </CardHeader>
         <CardContent>
           {activitiesLoading ? (
-            <p className="text-muted-foreground">Loading activities...</p>
+            <p className="text-slate-600">Loading activities...</p>
           ) : activities && activities.length > 0 ? (
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {activities.map((activity) => (
+              {activities.map((activity, idx) => (
                 <div
                   key={activity.activityId}
-                  className="flex items-start gap-3 pb-3 border-b last:border-b-0"
+                  className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
+                    idx % 2 === 0 ? 'bg-slate-50 hover:bg-blue-50' : 'bg-white hover:bg-blue-50'
+                  }`}
                 >
-                  <span className="text-xl">{getActivityIcon(activity)}</span>
+                  <span className="text-2xl mt-0.5">{getActivityIcon(activity)}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className="text-sm font-medium text-slate-900 truncate">
                       {activity.description}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.createdByUser?.name || 'System'} •{' '}
-                      {formatDate(activity.activityDate)}
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      {activity.createdByUser?.name || 'System'} • {formatDate(activity.activityDate)}
                     </p>
                   </div>
                 </div>

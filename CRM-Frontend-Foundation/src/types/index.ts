@@ -231,6 +231,17 @@ export interface Order {
   subscription?: Subscription;
 }
 
+export interface PartnerEarning {
+  orderId: number;
+  orderNumber: string;
+  orderDate: string;
+  customerName: string;
+  orderAmount: number;
+  commissionRate: number;
+  earningAmount: number;
+  status: string;
+}
+
 // Subscription types
 export type SubscriptionStatus = 'Active' | 'Expired' | 'Cancelled' | 'Suspended' | 'PendingRenewal';
 
@@ -340,6 +351,7 @@ export interface DashboardStats {
   activeSubscriptions: number;
   expiredSubscriptions: number;
   totalRevenue: number;
+  totalEarnings: number;
   upcomingRenewals30Days: number;
   upcomingRenewals90Days: number;
 }

@@ -9,6 +9,7 @@ import type {
   DashboardStats,
   Activity,
   User,
+  PartnerEarning,
 } from '@/types';
 
 // Customers API
@@ -66,6 +67,11 @@ export const ordersApi = {
 
   getById: async (id: number) => {
     const { data } = await apiClient.get<ApiResponse<Order>>(`/orders/${id}`);
+    return data.data;
+  },
+
+  getEarnings: async () => {
+    const { data } = await apiClient.get<ApiResponse<PartnerEarning[]>>('/orders/earnings');
     return data.data;
   },
 
@@ -148,6 +154,25 @@ export const dashboardApi = {
       { params: { count } }
     );
     return data.data;
+  },
+};
+
+// Export API
+export const exportApi = {
+  downloadPartnerProfile: async (preset: 'generic' | 'zoho' | 'hubspot' | 'salesforce' = 'generic') => {
+    const response = await apiClient.get('/export/partner-profile', {
+      params: { preset },
+      responseType: 'blob',
+    });
+
+    const contentDisposition = response.headers['content-disposition'] as string | undefined;
+    const fileNameMatch = contentDisposition?.match(/filename="?([^\";]+)"?/i);
+    const fileName = fileNameMatch?.[1] || `crm_partner_export_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+
+    return {
+      blob: response.data as Blob,
+      fileName,
+    };
   },
 };
 

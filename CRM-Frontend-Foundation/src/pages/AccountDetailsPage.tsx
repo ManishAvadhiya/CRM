@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/services/authService';
+import { exportApi } from '@/services';
 import { useAuthStore } from '@/store/authStore';
-import { User, Mail, Phone, LogOut, Lock, ShieldCheck } from 'lucide-react';
+import { User, Mail, Phone, LogOut, Lock, ShieldCheck, Download, Loader2 } from 'lucide-react';
 
 const inputCls = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition';
 
@@ -25,6 +26,7 @@ export function AccountDetailsPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [exportingPreset, setExportingPreset] = useState<null | 'generic' | 'zoho' | 'hubspot' | 'salesforce'>(null);
 
   useEffect(() => { loadProfile(); }, []);
 
@@ -63,6 +65,26 @@ export function AccountDetailsPage() {
     ManagementAdmin: 'bg-red-50 text-red-700 border-red-200',
     Marketing: 'bg-blue-50 text-blue-700 border-blue-200',
     Partner: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  };
+
+  const handleExportProfile = async (preset: 'generic' | 'zoho' | 'hubspot' | 'salesforce') => {
+    try {
+      setExportingPreset(preset);
+      const { blob, fileName } = await exportApi.downloadPartnerProfile(preset);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting profile:', error);
+      alert('Unable to export profile right now. Please try again.');
+    } finally {
+      setExportingPreset(null);
+    }
   };
 
   if (isLoading) {
@@ -154,6 +176,55 @@ export function AccountDetailsPage() {
             <p className="text-sm text-gray-500">Keep your account secure by updating your password periodically.</p>
           )}
         </div>
+
+        {/* CRM Export card for Partner */}
+        {profile?.role === 'Partner' && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-900">CRM Data Export</h2>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
+                Partner
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Download your full CRM profile as a ZIP containing CSV files (leads, customers, orders, subscriptions, products, earnings) with preset headers for your target CRM.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={() => handleExportProfile('generic')}
+                disabled={exportingPreset !== null}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-gray-800 hover:bg-gray-900 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {exportingPreset === 'generic' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exportingPreset === 'generic' ? 'Exporting Generic...' : 'Export Generic CSV'}
+              </button>
+              <button
+                onClick={() => handleExportProfile('zoho')}
+                disabled={exportingPreset !== null}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {exportingPreset === 'zoho' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exportingPreset === 'zoho' ? 'Exporting Zoho...' : 'Export Zoho Preset'}
+              </button>
+              <button
+                onClick={() => handleExportProfile('hubspot')}
+                disabled={exportingPreset !== null}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {exportingPreset === 'hubspot' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exportingPreset === 'hubspot' ? 'Exporting HubSpot...' : 'Export HubSpot Preset'}
+              </button>
+              <button
+                onClick={() => handleExportProfile('salesforce')}
+                disabled={exportingPreset !== null}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-blue-700 hover:bg-blue-800 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {exportingPreset === 'salesforce' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exportingPreset === 'salesforce' ? 'Exporting Salesforce...' : 'Export Salesforce Preset'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Logout */}
         <div className="flex justify-end">

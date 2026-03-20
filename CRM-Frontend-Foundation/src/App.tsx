@@ -13,6 +13,7 @@ import OrdersPage from './pages/OrdersPage.tsx';
 import SubscriptionsPage from './pages/SubscriptionsPage.tsx';
 import ProductVariantsPage from './pages/ProductVariantsPage.tsx';
 import NotificationsPage from './pages/NotificationsPage.tsx';
+import EarningsPage from './pages/EarningsPage.tsx';
 import { AccountDetailsPage } from './pages/AccountDetailsPage';
 import { LeadDetailPage } from './pages/LeadDetailPage';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -92,6 +93,7 @@ function App() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="products" element={<ProductVariantsPage />} />
+            <Route path="earnings" element={<EarningsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="account" element={<AccountDetailsPage />} />
             

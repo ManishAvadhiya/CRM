@@ -99,16 +99,74 @@ public class OrdersController : ControllerBase
         }
     }
 
+    [HttpGet("earnings")]
+    public async Task<ActionResult<ApiResponse<List<PartnerEarningDto>>>> GetEarnings()
+    {
+        try
+        {
+            const decimal commissionRate = 10m;
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var query = _context.Orders
+                .Include(o => o.Customer)
+                .AsQueryable();
+
+            if (userRole == "Partner")
+            {
+                query = query.Where(o => o.CreatedBy == currentUserId);
+            }
+
+            var earnings = await query
+                .OrderByDescending(o => o.OrderDate)
+                .Select(o => new PartnerEarningDto
+                {
+                    OrderId = o.OrderId,
+                    OrderNumber = o.OrderNumber,
+                    OrderDate = o.OrderDate,
+                    CustomerName = o.Customer != null ? o.Customer.CompanyName : "-",
+                    OrderAmount = o.TotalAmount,
+                    Status = o.Status.ToString(),
+                    CommissionRate = commissionRate,
+                    EarningAmount = (o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
+                        ? Math.Round(o.TotalAmount * commissionRate / 100m, 2)
+                        : 0m
+                })
+                .ToListAsync();
+
+            return Ok(ApiResponse<List<PartnerEarningDto>>.SuccessResponse(earnings));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error fetching partner earnings: {ex.Message}");
+            return StatusCode(500, ApiResponse<List<PartnerEarningDto>>.ErrorResponse("Error fetching partner earnings"));
+        }
+    }
+
     [HttpPost]
     public async Task<ActionResult<ApiResponse<Order>>> Create([FromBody] Order order)
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
             // Get product variant to fetch pricing
             var variant = await _context.ProductVariants.FindAsync(order.VariantId);
             if (variant == null)
             {
                 return BadRequest(ApiResponse<Order>.ErrorResponse("Invalid product variant"));
+            }
+
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.CustomerId == order.CustomerId);
+            if (customer == null)
+            {
+                return BadRequest(ApiResponse<Order>.ErrorResponse("Invalid customer"));
+            }
+
+            if (userRole == "Partner" && customer.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             // Calculate amounts based on user license type
@@ -126,7 +184,7 @@ public class OrdersController : ControllerBase
             var orderCount = await _context.Orders.CountAsync();
             order.OrderNumber = $"ORD-{DateTime.UtcNow.Year}-{(orderCount + 1):D4}";
 
-            order.CreatedBy = GetCurrentUserId();
+            order.CreatedBy = currentUserId;
             order.CreatedAt = DateTime.UtcNow;
             order.OrderDate = DateTime.UtcNow.Date;
 
@@ -134,7 +192,7 @@ public class OrdersController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Send notification
-            var customer = await _context.Customers
+            customer = await _context.Customers
                 .Include(c => c.AccountOwnerUser)
                 .FirstOrDefaultAsync(c => c.CustomerId == order.CustomerId);
 
@@ -168,6 +226,9 @@ public class OrdersController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
             var order = await _context.Orders
                 .Include(o => o.ProductVariant)
                 .Include(o => o.Customer)
@@ -182,6 +243,11 @@ public class OrdersController : ControllerBase
             if (order.Status == OrderStatus.Confirmed)
             {
                 return BadRequest(ApiResponse<Subscription>.ErrorResponse("Order already confirmed"));
+            }
+
+            if (userRole == "Partner" && order.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             // Update order status
@@ -206,7 +272,7 @@ public class OrdersController : ControllerBase
                 AnnualFee = order.ProductVariant.AnnualSubscriptionFee,
                 Status = SubscriptionStatus.Active,
                 AutoRenew = true,
-                CreatedBy = GetCurrentUserId(),
+                CreatedBy = currentUserId,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -247,4 +313,16 @@ public class OrdersController : ControllerBase
             return StatusCode(500, ApiResponse<Subscription>.ErrorResponse("Error confirming order"));
         }
     }
+}
+
+public class PartnerEarningDto
+{
+    public int OrderId { get; set; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public DateTime OrderDate { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal OrderAmount { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal EarningAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
 }

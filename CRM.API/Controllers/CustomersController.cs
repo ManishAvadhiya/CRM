@@ -33,8 +33,20 @@ public class CustomersController : ControllerBase
     {
         try
         {
-            var customers = await _context.Customers
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var query = _context.Customers
                 .Include(c => c.AccountOwnerUser)
+                .AsQueryable();
+
+            // Partners can only view customers created by them
+            if (userRole == "Partner")
+            {
+                query = query.Where(c => c.CreatedBy == currentUserId);
+            }
+
+            var customers = await query
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
@@ -52,6 +64,9 @@ public class CustomersController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
             var customer = await _context.Customers
                 .Include(c => c.Lead)
                 .Include(c => c.AccountOwnerUser)
@@ -62,6 +77,11 @@ public class CustomersController : ControllerBase
             if (customer == null)
             {
                 return NotFound(ApiResponse<Customer>.ErrorResponse("Customer not found"));
+            }
+
+            if (userRole == "Partner" && customer.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             return Ok(ApiResponse<Customer>.SuccessResponse(customer));
@@ -101,11 +121,19 @@ public class CustomersController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
             var customer = await _context.Customers.FindAsync(id);
             
             if (customer == null)
             {
                 return NotFound(ApiResponse<Customer>.ErrorResponse("Customer not found"));
+            }
+
+            if (userRole == "Partner" && customer.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             // Update properties
@@ -150,11 +178,19 @@ public class CustomersController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
             var customer = await _context.Customers.FindAsync(id);
             
             if (customer == null)
             {
                 return NotFound(ApiResponse<bool>.ErrorResponse("Customer not found"));
+            }
+
+            if (userRole == "Partner" && customer.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             // Soft delete

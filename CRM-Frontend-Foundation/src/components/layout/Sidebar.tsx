@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   RefreshCw,
   Package,
+  Banknote,
   Bell,
   User,
   ChevronLeft,
@@ -44,7 +45,11 @@ const marketingNavigation = [
 const partnerNavigation = [
   { name: 'My Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { name: 'My Leads', to: '/dashboard/leads', icon: UserPlus },
+  { name: 'My Customers', to: '/dashboard/customers', icon: Users },
   { name: 'My Orders', to: '/dashboard/orders', icon: ShoppingCart },
+  { name: 'My Subscriptions', to: '/dashboard/subscriptions', icon: RefreshCw },
+  { name: 'Products', to: '/dashboard/products', icon: Package },
+  { name: 'My Earnings', to: '/dashboard/earnings', icon: Banknote },
   { name: 'Account', to: '/dashboard/account', icon: User },
 ];
 

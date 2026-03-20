@@ -32,6 +32,7 @@ public class DashboardController : ControllerBase
     {
         try
         {
+            const decimal commissionRate = 10m;
             var currentUserId = GetCurrentUserId();
             var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             
@@ -50,6 +51,8 @@ public class DashboardController : ControllerBase
                 stats.ConvertedLeads = await partnerLeads.CountAsync(l => l.Status == LeadStatus.Converted);
                 stats.LostLeads = await partnerLeads.CountAsync(l => l.Status == LeadStatus.Lost);
 
+                stats.TotalCustomers = await _context.Customers.CountAsync(c => c.CreatedBy == currentUserId);
+
                 stats.TotalOrders = await partnerOrders.CountAsync();
                 stats.PendingOrders = await partnerOrders.CountAsync(o => o.Status == OrderStatus.Pending);
                 stats.ConfirmedOrders = await partnerOrders.CountAsync(o => o.Status == OrderStatus.Confirmed);
@@ -62,6 +65,8 @@ public class DashboardController : ControllerBase
                 stats.TotalRevenue = await partnerOrders
                     .Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
                     .SumAsync(o => o.TotalAmount);
+
+                stats.TotalEarnings = Math.Round(stats.TotalRevenue * commissionRate / 100m, 2);
 
                 stats.UpcomingRenewals30Days = await partnerSubscriptions
                     .CountAsync(s => s.Status == SubscriptionStatus.Active && 
@@ -96,6 +101,8 @@ public class DashboardController : ControllerBase
                 stats.TotalRevenue = await _context.Orders
                     .Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
                     .SumAsync(o => o.TotalAmount);
+
+                stats.TotalEarnings = 0;
 
                 stats.UpcomingRenewals30Days = await _context.Subscriptions
                     .CountAsync(s => s.Status == SubscriptionStatus.Active && 
@@ -178,6 +185,7 @@ public class DashboardStats
     public int ExpiredSubscriptions { get; set; }
     
     public decimal TotalRevenue { get; set; }
+    public decimal TotalEarnings { get; set; }
     
     public int UpcomingRenewals30Days { get; set; }
     public int UpcomingRenewals90Days { get; set; }

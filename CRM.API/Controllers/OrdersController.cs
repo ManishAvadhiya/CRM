@@ -36,9 +36,23 @@ public class OrdersController : ControllerBase
     {
         try
         {
-            var orders = await _context.Orders
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var query = _context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.ProductVariant)
+                .AsQueryable();
+
+            // Role-based visibility
+            if (userRole == "Partner")
+            {
+                // Partners can only see orders created by them
+                query = query.Where(o => o.CreatedBy == currentUserId);
+            }
+            // ManagementAdmin and Marketing can see all orders
+
+            var orders = await query
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -56,6 +70,9 @@ public class OrdersController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
             var order = await _context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.ProductVariant)
@@ -65,6 +82,12 @@ public class OrdersController : ControllerBase
             if (order == null)
             {
                 return NotFound(ApiResponse<Order>.ErrorResponse("Order not found"));
+            }
+
+            // Role-based access control
+            if (userRole == "Partner" && order.CreatedBy != currentUserId)
+            {
+                return Forbid();
             }
 
             return Ok(ApiResponse<Order>.SuccessResponse(order));

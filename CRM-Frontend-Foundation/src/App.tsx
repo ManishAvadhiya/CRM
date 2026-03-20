@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { useAuthStore } from './store/authStore';
 
 // Pages
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import LeadsPage from './pages/LeadsPage.tsx';
@@ -14,6 +15,8 @@ import ProductVariantsPage from './pages/ProductVariantsPage.tsx';
 import NotificationsPage from './pages/NotificationsPage.tsx';
 import { AccountDetailsPage } from './pages/AccountDetailsPage';
 import { LeadDetailPage } from './pages/LeadDetailPage';
+import AdminUserManagement from './pages/AdminUserManagement';
+import MarketingUserManagement from './pages/MarketingUserManagement';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -37,15 +40,45 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RoleBasedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
+function UserManagementWrapper() {
+  const user = useAuthStore((state) => state.user);
+  
+  if (user?.role === 'ManagementAdmin') {
+    return <AdminUserManagement />;
+  } else if (user?.role === 'Marketing') {
+    return <MarketingUserManagement />;
+  }
+  
+  return <Navigate to="/" replace />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           
+          {/* Protected Dashboard Routes */}
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardLayout />
@@ -61,7 +94,20 @@ function App() {
             <Route path="products" element={<ProductVariantsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="account" element={<AccountDetailsPage />} />
+            
+            {/* User Management Routes */}
+            <Route
+              path="users"
+              element={
+                <RoleBasedRoute allowedRoles={['ManagementAdmin', 'Marketing']}>
+                  <UserManagementWrapper />
+                </RoleBasedRoute>
+              }
+            />
           </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Toaster position="top-right" />
       </BrowserRouter>

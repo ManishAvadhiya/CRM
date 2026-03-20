@@ -21,44 +21,92 @@ public class DashboardController : ControllerBase
         _logger = logger;
     }
 
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        return int.Parse(userIdClaim ?? "0");
+    }
+
     [HttpGet("stats")]
     public async Task<ActionResult<ApiResponse<DashboardStats>>> GetStats()
     {
         try
         {
-            var stats = new DashboardStats
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            
+            var stats = new DashboardStats();
+
+            if (userRole == "Partner")
             {
-                TotalLeads = await _context.Leads.CountAsync(),
-                NewLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.New),
-                DemoLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Demo),
-                ConvertedLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Converted),
-                LostLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Lost),
-                
-                TotalCustomers = await _context.Customers.CountAsync(),
-                
-                TotalOrders = await _context.Orders.CountAsync(),
-                PendingOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending),
-                ConfirmedOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Confirmed),
-                DeliveredOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivered),
-                
-                TotalSubscriptions = await _context.Subscriptions.CountAsync(),
-                ActiveSubscriptions = await _context.Subscriptions.CountAsync(s => s.Status == SubscriptionStatus.Active),
-                ExpiredSubscriptions = await _context.Subscriptions.CountAsync(s => s.Status == SubscriptionStatus.Expired),
-                
-                TotalRevenue = await _context.Orders
+                // Partner-specific dashboard stats
+                var partnerLeads = _context.Leads.Where(l => l.CreatedBy == currentUserId);
+                var partnerOrders = _context.Orders.Where(o => o.CreatedBy == currentUserId);
+                var partnerSubscriptions = _context.Subscriptions.Include(s => s.Order).Where(s => s.Order.CreatedBy == currentUserId);
+
+                stats.TotalLeads = await partnerLeads.CountAsync();
+                stats.NewLeads = await partnerLeads.CountAsync(l => l.Status == LeadStatus.New);
+                stats.DemoLeads = await partnerLeads.CountAsync(l => l.Status == LeadStatus.Demo);
+                stats.ConvertedLeads = await partnerLeads.CountAsync(l => l.Status == LeadStatus.Converted);
+                stats.LostLeads = await partnerLeads.CountAsync(l => l.Status == LeadStatus.Lost);
+
+                stats.TotalOrders = await partnerOrders.CountAsync();
+                stats.PendingOrders = await partnerOrders.CountAsync(o => o.Status == OrderStatus.Pending);
+                stats.ConfirmedOrders = await partnerOrders.CountAsync(o => o.Status == OrderStatus.Confirmed);
+                stats.DeliveredOrders = await partnerOrders.CountAsync(o => o.Status == OrderStatus.Delivered);
+
+                stats.TotalSubscriptions = await partnerSubscriptions.CountAsync();
+                stats.ActiveSubscriptions = await partnerSubscriptions.CountAsync(s => s.Status == SubscriptionStatus.Active);
+                stats.ExpiredSubscriptions = await partnerSubscriptions.CountAsync(s => s.Status == SubscriptionStatus.Expired);
+
+                stats.TotalRevenue = await partnerOrders
                     .Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
-                    .SumAsync(o => o.TotalAmount),
-                
-                UpcomingRenewals30Days = await _context.Subscriptions
+                    .SumAsync(o => o.TotalAmount);
+
+                stats.UpcomingRenewals30Days = await partnerSubscriptions
                     .CountAsync(s => s.Status == SubscriptionStatus.Active && 
                                    s.RenewalDate >= DateTime.UtcNow.Date && 
-                                   s.RenewalDate <= DateTime.UtcNow.Date.AddDays(30)),
-                
-                UpcomingRenewals90Days = await _context.Subscriptions
+                                   s.RenewalDate <= DateTime.UtcNow.Date.AddDays(30));
+
+                stats.UpcomingRenewals90Days = await partnerSubscriptions
                     .CountAsync(s => s.Status == SubscriptionStatus.Active && 
                                    s.RenewalDate >= DateTime.UtcNow.Date && 
-                                   s.RenewalDate <= DateTime.UtcNow.Date.AddDays(90))
-            };
+                                   s.RenewalDate <= DateTime.UtcNow.Date.AddDays(90));
+            }
+            else
+            {
+                // Admin/Marketing dashboard - all stats
+                stats.TotalLeads = await _context.Leads.CountAsync();
+                stats.NewLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.New);
+                stats.DemoLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Demo);
+                stats.ConvertedLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Converted);
+                stats.LostLeads = await _context.Leads.CountAsync(l => l.Status == LeadStatus.Lost);
+
+                stats.TotalCustomers = await _context.Customers.CountAsync();
+
+                stats.TotalOrders = await _context.Orders.CountAsync();
+                stats.PendingOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending);
+                stats.ConfirmedOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Confirmed);
+                stats.DeliveredOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivered);
+
+                stats.TotalSubscriptions = await _context.Subscriptions.CountAsync();
+                stats.ActiveSubscriptions = await _context.Subscriptions.CountAsync(s => s.Status == SubscriptionStatus.Active);
+                stats.ExpiredSubscriptions = await _context.Subscriptions.CountAsync(s => s.Status == SubscriptionStatus.Expired);
+
+                stats.TotalRevenue = await _context.Orders
+                    .Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
+                    .SumAsync(o => o.TotalAmount);
+
+                stats.UpcomingRenewals30Days = await _context.Subscriptions
+                    .CountAsync(s => s.Status == SubscriptionStatus.Active && 
+                                   s.RenewalDate >= DateTime.UtcNow.Date && 
+                                   s.RenewalDate <= DateTime.UtcNow.Date.AddDays(30));
+
+                stats.UpcomingRenewals90Days = await _context.Subscriptions
+                    .CountAsync(s => s.Status == SubscriptionStatus.Active && 
+                                   s.RenewalDate >= DateTime.UtcNow.Date && 
+                                   s.RenewalDate <= DateTime.UtcNow.Date.AddDays(90));
+            }
 
             // Lead conversion rate
             if (stats.TotalLeads > 0)
@@ -80,8 +128,21 @@ public class DashboardController : ControllerBase
     {
         try
         {
-            var activities = await _context.Activities
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var query = _context.Activities
                 .Include(a => a.CreatedByUser)
+                .AsQueryable();
+
+            // Role-based activity filtering
+            if (userRole == "Partner")
+            {
+                // Partners see only their own activities
+                query = query.Where(a => a.CreatedBy == currentUserId);
+            }
+
+            var activities = await query
                 .OrderByDescending(a => a.ActivityDate)
                 .Take(count)
                 .ToListAsync();

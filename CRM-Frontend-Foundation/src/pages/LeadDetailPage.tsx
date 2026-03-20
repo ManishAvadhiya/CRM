@@ -1,35 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { LeadHistoryTimeline } from '@/components/ui/LeadHistoryTimeline';
 import { leadsService } from '@/services/leadsService';
 import { customersApi } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { format } from 'date-fns';
-
-import { 
-  ArrowLeft, 
-  MessageSquare, 
-  CheckCircle, 
-  User, 
-  Mail, 
-  Phone, 
-  Building2, 
-  Globe, 
-  Calendar,
-  Clock,
-  Edit3,
-  X,
-  Save,
-  AlertCircle,
-  FileText,
-  MapPin,
-  Hash,
-  Briefcase,
-  Tag
+import {
+  ArrowLeft, MessageSquare, CheckCircle, User, Mail, Phone,
+  Building2, Globe, Calendar, Clock, Edit3, X, Save,
+  AlertCircle, FileText, MapPin, Tag, Briefcase,
 } from 'lucide-react';
+
+const inputCls =
+  'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white ' +
+  'focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent placeholder:text-gray-400';
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div>
+    <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</label>
+    {children}
+  </div>
+);
 
 export function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -71,9 +62,7 @@ export function LeadDetailPage() {
 
   const leadStatuses = ['New', 'Demo', 'Converted', 'Lost'];
 
-  useEffect(() => {
-    loadLeadDetails();
-  }, [id]);
+  useEffect(() => { loadLeadDetails(); }, [id]);
 
   const loadLeadDetails = async () => {
     try {
@@ -84,8 +73,8 @@ export function LeadDetailPage() {
         setHistory(data.history || []);
         setNewStatus(data.status || '');
       }
-    } catch (error) {
-      console.error('Error loading lead:', error);
+    } catch (err) {
+      console.error('Error loading lead:', err);
       setError('Failed to load lead details');
     } finally {
       setIsLoading(false);
@@ -95,9 +84,7 @@ export function LeadDetailPage() {
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!noteText.trim() || !id) return;
-
-    setError('');
-    setSuccess('');
+    setError(''); setSuccess('');
     try {
       setIsSubmitting(true);
       await leadsService.addNote(parseInt(id), noteText);
@@ -105,48 +92,34 @@ export function LeadDetailPage() {
       setShowAddNote(false);
       setSuccess('Note added successfully');
       await loadLeadDetails();
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Error adding note');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error adding note');
+    } finally { setIsSubmitting(false); }
   };
 
   const handleStatusChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStatus || !id) return;
-
-    if (newStatus === lead?.status) {
-      setShowStatusChange(false);
-      return;
-    }
-
-    setError('');
-    setSuccess('');
+    if (newStatus === lead?.status) { setShowStatusChange(false); return; }
+    setError(''); setSuccess('');
     try {
       setIsSubmitting(true);
       await leadsService.updateStatus(parseInt(id), { status: newStatus });
       setShowStatusChange(false);
       setSuccess('Lead status updated successfully');
       await loadLeadDetails();
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Error updating status');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error updating status');
+    } finally { setIsSubmitting(false); }
   };
 
   const handleConvert = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
-
-    setError('');
-    setSuccess('');
+    setError(''); setSuccess('');
     try {
       setIsSubmitting(true);
-      
       const customerTypeEnum = (customerFormData.customerType || 'Business') === 'Individual' ? 0 : 1;
-      
       const customerData = {
         leadId: parseInt(id),
         companyName: customerFormData.companyName || lead.companyName,
@@ -170,43 +143,21 @@ export function LeadDetailPage() {
         gstNumber: customerFormData.gstNumber,
         panNumber: customerFormData.panNumber,
       };
-
       await customersApi.create(customerData);
       await leadsService.updateStatus(parseInt(id), { status: 'Converted' });
-      
       setShowConvertForm(false);
       setSuccess('Lead converted to customer successfully');
       await loadLeadDetails();
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Error converting lead to customer');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error converting lead');
+    } finally { setIsSubmitting(false); }
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      New: 'bg-blue-100 text-blue-800 border-blue-200',
-      Demo: 'bg-purple-100 text-purple-800 border-purple-200',
-      Converted: 'bg-green-100 text-green-800 border-green-200',
-      Lost: 'bg-red-100 text-red-800 border-red-200',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'New':
-        return <Tag className="h-4 w-4" />;
-      case 'Demo':
-        return <Calendar className="h-4 w-4" />;
-      case 'Converted':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'Lost':
-        return <X className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
+  const statusStyles: Record<string, string> = {
+    New: 'bg-blue-50 text-blue-700 border border-blue-200',
+    Demo: 'bg-violet-50 text-violet-700 border border-violet-200',
+    Converted: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    Lost: 'bg-red-50 text-red-700 border border-red-200',
   };
 
   const canEdit = user?.role === 'ManagementAdmin' || lead?.createdBy === user?.userId;
@@ -214,568 +165,346 @@ export function LeadDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading lead details...</p>
-        </div>
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <Card className="p-8 text-center max-w-md">
-          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">Lead not found</p>
-          <Button onClick={() => navigate('/leads')} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Leads
-          </Button>
-        </Card>
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
+          <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm mb-4">Lead not found</p>
+          <button
+            onClick={() => navigate('/leads')}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Leads
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with breadcrumb */}
-        <div className="mb-6">
-          {/* <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <button 
-              onClick={() => navigate('/leads')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Leads
-            </button>
-            <span>/</span>
-            <span className="text-gray-700">{lead.name}</span>
-          </div> */}
-          
-          <div className="flex items-center justify-between">
+    <div className="bg-gray-50 min-h-screen p-6 lg:p-8">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/leads')}
+            className="p-2 rounded-xl text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1">
             <div className="flex items-center gap-3">
-              <Button
-                onClick={() => navigate('/leads')}
-                variant="ghost"
-                size="sm"
-                className="hover:bg-gray-200"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-2xl font-bold text-gray-900">{lead.name}</h1>
-              <Badge className={`${getStatusColor(lead.status)} flex items-center gap-1`}>
-                {getStatusIcon(lead.status)}
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{lead.name}</h1>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyles[lead.status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
                 {lead.status}
-              </Badge>
+              </span>
             </div>
+            <p className="text-sm text-gray-500 mt-0.5">{lead.companyName || 'No company'}</p>
           </div>
         </div>
 
-        {/* Alert Messages */}
+        {/* Alerts */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-red-800">{error}</p>
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-700">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            {error}
           </div>
         )}
-
         {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-green-800">{success}</p>
+          <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-sm text-emerald-700">
+            <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            {success}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Main Content - Lead Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Lead Information Card */}
-            <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h2 className="text-white font-semibold flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Lead Information
-                </h2>
+            {/* Lead Info */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-sm font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                <User className="w-4 h-4 text-indigo-600" />
+                Lead Information
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                {[
+                  { icon: Mail, label: 'Email', value: lead.email },
+                  { icon: Phone, label: 'Phone', value: lead.phone },
+                  { icon: Building2, label: 'Company', value: lead.companyName },
+                  { icon: Briefcase, label: 'Industry', value: lead.industry },
+                  { icon: Globe, label: 'Website', value: lead.website },
+                  { icon: Tag, label: 'Lead Source', value: lead.leadSource },
+                ].map(({ icon: Icon, label, value }) =>
+                  value ? (
+                    <div key={label} className="flex items-start gap-3">
+                      <Icon className="w-4 h-4 text-gray-300 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
+                        <p className="text-sm text-gray-800 mt-0.5">{value}</p>
+                      </div>
+                    </div>
+                  ) : null
+                )}
               </div>
-              
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</p>
-                        <p className="text-gray-900 mt-1">{lead.email}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <Building2 className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Company</p>
-                        <p className="text-gray-900 mt-1">{lead.companyName || 'Not provided'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Globe className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Website</p>
-                        <p className="text-gray-900 mt-1">{lead.website || 'Not provided'}</p>
-                      </div>
-                    </div>
+              {lead.notes && (
+                <div className="mt-5 pt-5 border-t border-gray-50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4 text-gray-300" />
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Notes</p>
                   </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</p>
-                        <p className="text-gray-900 mt-1">{lead.phone || 'Not provided'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Briefcase className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</p>
-                        <p className="text-gray-900 mt-1">{lead.industry || 'Not provided'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Tag className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Source</p>
-                        <p className="text-gray-900 mt-1">{lead.leadSource || 'Not provided'}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{lead.notes}</p>
                 </div>
+              )}
 
-                {lead.notes && (
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <p className="text-sm font-medium text-gray-700">Notes</p>
-                    </div>
-                    <p className="text-gray-700 whitespace-pre-wrap">{lead.notes}</p>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                {canEdit && (
-                  <div className="mt-6 flex flex-wrap gap-3 border-t pt-6">
-                    <Button
-                      onClick={() => setShowAddNote(true)}
-                      variant="outline"
-                      className="flex-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+              {/* Actions */}
+              {canEdit && (
+                <div className="mt-5 pt-5 border-t border-gray-50 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => { setShowAddNote(true); setShowStatusChange(false); setShowConvertForm(false); }}
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Add Note
+                  </button>
+                  <button
+                    onClick={() => { setShowStatusChange(true); setShowAddNote(false); setShowConvertForm(false); }}
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-xl transition-colors"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Change Status
+                  </button>
+                  {canConvert && (
+                    <button
+                      onClick={() => { setShowConvertForm(true); setShowAddNote(false); setShowStatusChange(false); }}
+                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
                     >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Add Note
-                    </Button>
-                    <Button
-                      onClick={() => setShowStatusChange(true)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Edit3 className="h-4 w-4 mr-2" />
-                      Change Status
-                    </Button>
-                    {canConvert && (
-                      <Button
-                        onClick={() => setShowConvertForm(true)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Convert to Customer
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Card>
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Convert to Customer
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
-            {/* Add Note Form */}
+            {/* Add Note Panel */}
             {showAddNote && canEdit && (
-              <Card className="overflow-hidden border-blue-200">
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3">
-                  <h3 className="text-white font-medium flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Add a Note
+              <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-indigo-600" />
+                    Add Note
                   </h3>
+                  <button onClick={() => setShowAddNote(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <form onSubmit={handleAddNote} className="p-6">
+                <form onSubmit={handleAddNote} className="space-y-3">
                   <textarea
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     placeholder="Write your note here..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputCls}
                     rows={4}
                     required
                   />
-                  <div className="flex gap-3 mt-4">
-                    <Button
+                  <div className="flex gap-2">
+                    <button
                       type="submit"
                       disabled={isSubmitting || !noteText.trim()}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Add Note
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowAddNote(false)}
-                    >
-                      <X className="h-4 w-4 mr-2" />
+                      <Save className="w-3.5 h-3.5" />
+                      {isSubmitting ? 'Saving...' : 'Add Note'}
+                    </button>
+                    <button type="button" onClick={() => setShowAddNote(false)} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
                       Cancel
-                    </Button>
+                    </button>
                   </div>
                 </form>
-              </Card>
+              </div>
             )}
 
-            {/* Change Status Form */}
+            {/* Status Change Panel */}
             {showStatusChange && canEdit && (
-              <Card className="overflow-hidden border-purple-200">
-                <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-3">
-                  <h3 className="text-white font-medium flex items-center gap-2">
-                    <Edit3 className="h-4 w-4" />
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-violet-600" />
                     Change Status
                   </h3>
+                  <button onClick={() => setShowStatusChange(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <form onSubmit={handleStatusChange} className="p-6">
+                <form onSubmit={handleStatusChange} className="space-y-3">
                   <select
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className={inputCls}
                   >
                     <option value="">Select a status</option>
-                    {leadStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
+                    {leadStatuses.map((s) => (
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
-                  <div className="flex gap-3 mt-4">
-                    <Button
+                  <div className="flex gap-2">
+                    <button
                       type="submit"
                       disabled={isSubmitting || !newStatus || newStatus === lead.status}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Update Status
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowStatusChange(false)}
-                    >
-                      <X className="h-4 w-4 mr-2" />
+                      <Save className="w-3.5 h-3.5" />
+                      {isSubmitting ? 'Updating...' : 'Update Status'}
+                    </button>
+                    <button type="button" onClick={() => setShowStatusChange(false)} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
                       Cancel
-                    </Button>
+                    </button>
                   </div>
                 </form>
-              </Card>
+              </div>
             )}
 
-            {/* Convert to Customer Form */}
+            {/* Convert to Customer Panel */}
             {showConvertForm && canConvert && (
-              <Card className="overflow-hidden border-green-200">
-                <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-3">
-                  <h3 className="text-white font-medium flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    Convert Lead to Customer
+              <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    Convert to Customer
                   </h3>
+                  <button onClick={() => setShowConvertForm(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <form onSubmit={handleConvert} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                  {/* Basic Information */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      Basic Information
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Company Name
-                        </label>
-                        <input
-                          type="text"
-                          value={customerFormData.companyName || lead.companyName || ''}
-                          onChange={(e) =>
-                            setCustomerFormData({
-                              ...customerFormData,
-                              companyName: e.target.value,
-                            })
-                          }
-                          placeholder="Company name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Contact Person
-                        </label>
-                        <input
-                          type="text"
-                          value={customerFormData.contactPerson || lead.contactName || ''}
-                          onChange={(e) =>
-                            setCustomerFormData({
-                              ...customerFormData,
-                              contactPerson: e.target.value,
-                            })
-                          }
-                          placeholder="Contact person"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
+                <form onSubmit={handleConvert} className="space-y-5">
+                  {/* Basic Info */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <User className="w-3 h-3" /> Basic Information
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Company Name">
+                        <input type="text" value={customerFormData.companyName || lead.companyName || ''} onChange={(e) => setCustomerFormData({ ...customerFormData, companyName: e.target.value })} placeholder="Company name" className={inputCls} />
+                      </Field>
+                      <Field label="Contact Person">
+                        <input type="text" value={customerFormData.contactPerson || lead.contactName || ''} onChange={(e) => setCustomerFormData({ ...customerFormData, contactPerson: e.target.value })} placeholder="Contact person" className={inputCls} />
+                      </Field>
+                      <Field label="Email">
+                        <input type="email" value={customerFormData.email || lead.email || ''} onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })} placeholder="Email" className={inputCls} />
+                      </Field>
+                      <Field label="Phone">
+                        <input type="tel" value={customerFormData.phone || lead.phone || ''} onChange={(e) => setCustomerFormData({ ...customerFormData, phone: e.target.value })} placeholder="Phone" className={inputCls} />
+                      </Field>
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          value={customerFormData.email || lead.email || ''}
-                          onChange={(e) =>
-                            setCustomerFormData({
-                              ...customerFormData,
-                              email: e.target.value,
-                            })
-                          }
-                          placeholder="Email"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Phone
-                        </label>
-                        <input
-                          type="tel"
-                          value={customerFormData.phone || lead.phone || ''}
-                          onChange={(e) =>
-                            setCustomerFormData({
-                              ...customerFormData,
-                              phone: e.target.value,
-                            })
-                          }
-                          placeholder="Phone"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
+                  {/* Billing */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3" /> Billing Address
+                    </p>
+                    <div className="space-y-3">
+                      <Field label="Address">
+                        <textarea rows={2} value={customerFormData.billingAddress} onChange={(e) => setCustomerFormData({ ...customerFormData, billingAddress: e.target.value })} placeholder="Billing address" className={inputCls} />
+                      </Field>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="City">
+                          <input type="text" value={customerFormData.billingCity} onChange={(e) => setCustomerFormData({ ...customerFormData, billingCity: e.target.value })} placeholder="City" className={inputCls} />
+                        </Field>
+                        <Field label="State">
+                          <input type="text" value={customerFormData.billingState} onChange={(e) => setCustomerFormData({ ...customerFormData, billingState: e.target.value })} placeholder="State" className={inputCls} />
+                        </Field>
+                        <Field label="Postal Code">
+                          <input type="text" value={customerFormData.billingPostalCode} onChange={(e) => setCustomerFormData({ ...customerFormData, billingPostalCode: e.target.value })} placeholder="Postal Code" className={inputCls} />
+                        </Field>
+                        <Field label="GST Number">
+                          <input type="text" value={customerFormData.gstNumber} onChange={(e) => setCustomerFormData({ ...customerFormData, gstNumber: e.target.value })} placeholder="GST Number" className={inputCls} />
+                        </Field>
                       </div>
                     </div>
                   </div>
 
-                  {/* Billing Address */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      Billing Address
-                    </h4>
-                    <textarea
-                      value={customerFormData.billingAddress}
-                      onChange={(e) =>
-                        setCustomerFormData({
-                          ...customerFormData,
-                          billingAddress: e.target.value,
-                        })
-                      }
-                      placeholder="Billing address"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      rows={2}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        value={customerFormData.billingCity}
-                        onChange={(e) =>
-                          setCustomerFormData({
-                            ...customerFormData,
-                            billingCity: e.target.value,
-                          })
-                        }
-                        placeholder="City"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <input
-                        type="text"
-                        value={customerFormData.billingState}
-                        onChange={(e) =>
-                          setCustomerFormData({
-                            ...customerFormData,
-                            billingState: e.target.value,
-                          })
-                        }
-                        placeholder="State"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        value={customerFormData.billingPostalCode}
-                        onChange={(e) =>
-                          setCustomerFormData({
-                            ...customerFormData,
-                            billingPostalCode: e.target.value,
-                          })
-                        }
-                        placeholder="Postal Code"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <input
-                        type="text"
-                        value={customerFormData.gstNumber}
-                        onChange={(e) =>
-                          setCustomerFormData({
-                            ...customerFormData,
-                            gstNumber: e.target.value,
-                          })
-                        }
-                        placeholder="GST Number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4 border-t">
-                    <Button
+                  <div className="flex gap-2 pt-2 border-t border-gray-50">
+                    <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                          Converting...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Convert to Customer
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowConvertForm(false)}
-                    >
-                      <X className="h-4 w-4 mr-2" />
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      {isSubmitting ? 'Converting...' : 'Convert to Customer'}
+                    </button>
+                    <button type="button" onClick={() => setShowConvertForm(false)} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
                       Cancel
-                    </Button>
+                    </button>
                   </div>
                 </form>
-              </Card>
+              </div>
             )}
           </div>
 
-          {/* Sidebar - Metadata */}
-          <div className="space-y-6">
-            <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
-                <h3 className="text-white font-semibold flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Details
-                </h3>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                <div className="flex items-start gap-3">
-                  <Tag className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Status</p>
-                    <Badge className={`${getStatusColor(lead.status)} flex items-center gap-1 w-fit`}>
-                      {getStatusIcon(lead.status)}
-                      {lead.status}
-                    </Badge>
-                  </div>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-indigo-600" />
+                Details
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Status</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyles[lead.status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
+                    {lead.status}
+                  </span>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Created</p>
-                    <p className="text-gray-900 font-medium">
-                      {format(new Date(lead.createdAt), 'MMM d, yyyy')}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {format(new Date(lead.createdAt), 'h:mm a')}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Created</p>
+                  <p className="text-sm font-medium text-gray-900">{format(new Date(lead.createdAt), 'MMM d, yyyy')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{format(new Date(lead.createdAt), 'h:mm a')}</p>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <User className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Created By</p>
-                    <p className="text-gray-900 font-medium">{lead.createdByName || 'Unknown'}</p>
-                  </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Created By</p>
+                  <p className="text-sm font-medium text-gray-900">{lead.createdByName || 'Unknown'}</p>
                 </div>
-
                 {lead.updatedAt && (
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Last Updated</p>
-                      <p className="text-gray-900 font-medium">
-                        {format(new Date(lead.updatedAt), 'MMM d, yyyy')}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {format(new Date(lead.updatedAt), 'h:mm a')}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Last Updated</p>
+                    <p className="text-sm font-medium text-gray-900">{format(new Date(lead.updatedAt), 'MMM d, yyyy')}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{format(new Date(lead.updatedAt), 'h:mm a')}</p>
+                  </div>
+                )}
+                {lead.rating && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Rating</p>
+                    <p className="text-sm font-medium text-gray-900">{lead.rating}</p>
                   </div>
                 )}
               </div>
-            </Card>
+            </div>
           </div>
         </div>
 
         {/* History Timeline */}
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
-            <h2 className="text-white font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Lead History
-            </h2>
-          </div>
-          
-          <div className="p-6">
-            {history && history.length > 0 ? (
-              <LeadHistoryTimeline history={history} />
-            ) : (
-              <div className="text-center py-12">
-                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No history events yet</p>
-              </div>
-            )}
-          </div>
-        </Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="text-sm font-semibold text-gray-900 mb-5 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-indigo-600" />
+            Lead History
+          </h2>
+          {history && history.length > 0 ? (
+            <LeadHistoryTimeline history={history} />
+          ) : (
+            <div className="text-center py-10 text-gray-400">
+              <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No history events yet</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

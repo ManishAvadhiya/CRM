@@ -45,7 +45,7 @@ export default function LoginPage() {
       const response = await authApi.login(data);
       login(response);
       toast.success('Login successful!');
-      navigate('/');
+      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {

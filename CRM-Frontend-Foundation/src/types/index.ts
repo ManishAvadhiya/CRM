@@ -157,7 +157,7 @@ export interface Customer {
   alternatePhone?: string;
   website?: string;
   industry?: string;
-  customerType: CustomerType;
+  customerType: CustomerType | number;
   billingAddress?: string;
   billingCity?: string;
   billingState?: string;
@@ -204,7 +204,7 @@ export interface Order {
   orderNumber: string;
   customerId: number;
   variantId: number;
-  userLicenseType: UserLicenseType;
+  userLicenseType: UserLicenseType | number;
   quantity: number;
   basePrice: number;
   baseAmount: number;
@@ -219,8 +219,8 @@ export interface Order {
   orderDate: string;
   expectedDeliveryDate?: string;
   actualDeliveryDate?: string;
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
+  status: OrderStatus | number;
+  paymentStatus: PaymentStatus | number;
   paymentTerms?: string;
   notes?: string;
   createdBy: number;
@@ -245,7 +245,7 @@ export interface Subscription {
   currentPeriodEnd: string;
   renewalDate: string;
   annualFee: number;
-  status: SubscriptionStatus;
+  status: SubscriptionStatus | number;
   autoRenew: boolean;
   cancellationDate?: string;
   cancellationReason?: string;

@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { authApi } from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
-import { User, Mail, Phone, LogOut, Lock } from 'lucide-react';
+import { User, Mail, Phone, LogOut, Lock, ShieldCheck } from 'lucide-react';
+
+const inputCls = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition';
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
+      {children}
+    </div>
+  );
+}
 
 export function AccountDetailsPage() {
   const navigate = useNavigate();
@@ -13,18 +21,12 @@ export function AccountDetailsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  useEffect(() => { loadProfile(); }, []);
 
   const loadProfile = async () => {
     try {
@@ -40,31 +42,14 @@ export function AccountDetailsPage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess('');
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('New passwords do not match');
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters long');
-      return;
-    }
-
+    setPasswordError(''); setPasswordSuccess('');
+    if (passwordData.newPassword !== passwordData.confirmPassword) { setPasswordError('New passwords do not match'); return; }
+    if (passwordData.newPassword.length < 6) { setPasswordError('New password must be at least 6 characters'); return; }
     try {
       setIsChangingPassword(true);
-      await authApi.changePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
+      await authApi.changePassword({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword });
       setPasswordSuccess('Password changed successfully!');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordForm(false);
     } catch (error: any) {
       setPasswordError(error.response?.data?.message || 'Error changing password');
@@ -73,232 +58,109 @@ export function AccountDetailsPage() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const ROLE_MAP: Record<string, string> = { ManagementAdmin: 'Management Admin', Marketing: 'Marketing', Partner: 'Partner' };
+  const ROLE_COLORS: Record<string, string> = {
+    ManagementAdmin: 'bg-red-50 text-red-700 border-red-200',
+    Marketing: 'bg-blue-50 text-blue-700 border-blue-200',
+    Partner: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-500">Loading profile...</div>
-      </div>
-    );
+    return <div className="bg-gray-50 min-h-screen flex items-center justify-center"><div className="text-sm text-gray-400">Loading profile...</div></div>;
   }
 
-  const getRoleDisplayName = (role: string) => {
-    const roleMap: { [key: string]: string } = {
-      ManagementAdmin: 'Management Admin',
-      Marketing: 'Marketing',
-      Partner: 'Partner',
-    };
-    return roleMap[role] || role;
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Account Details</h1>
-          <p className="text-gray-600 mt-2">Manage your account information and security</p>
+    <div className="bg-gray-50 min-h-screen p-6 lg:p-8">
+      <div className="max-w-2xl mx-auto space-y-6">
+
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Account Details</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Manage your profile and security settings</p>
         </div>
 
-        {/* Profile Card */}
-        <Card className="p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-6">Profile Information</h2>
-          
-          <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-                  <User className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <p className="text-gray-900 font-medium">{profile?.name}</p>
+        {/* Profile card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+          <div className="flex items-center gap-4 pb-4 border-b border-gray-50">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+              <User className="w-7 h-7 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-900">{profile?.name}</p>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${ROLE_COLORS[profile?.role] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                <ShieldCheck className="w-3 h-3 mr-1" />
+                {ROLE_MAP[profile?.role] || profile?.role}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div>
+                <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Email</p>
+                <p className="text-sm font-medium text-gray-900">{profile?.email}</p>
               </div>
             </div>
-
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                  <Mail className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <p className="text-gray-900 font-medium">{profile?.email}</p>
-              </div>
-            </div>
-
             {profile?.phone && (
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
-                    <Phone className="h-6 w-6 text-yellow-600" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </label>
-                  <p className="text-gray-900 font-medium">{profile.phone}</p>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Phone</p>
+                  <p className="text-sm font-medium text-gray-900">{profile.phone}</p>
                 </div>
               </div>
             )}
-
-            <div className="bg-blue-50 border border-blue-200 rounded p-4">
-              <div className="flex gap-3">
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Role</p>
-                  <p className="text-blue-700 font-semibold">{getRoleDisplayName(profile?.role)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-500">
-              <p>Account created on {new Date(profile?.createdAt).toLocaleDateString()}</p>
-              {profile?.lastLogin && (
-                <p>Last login: {new Date(profile.lastLogin).toLocaleString()}</p>
-              )}
-            </div>
           </div>
-        </Card>
+          {profile?.createdAt && (
+            <p className="text-xs text-gray-400">Member since {new Date(profile.createdAt).toLocaleDateString()}</p>
+          )}
+        </div>
 
-        {/* Password Change Card */}
-        <Card className="p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Lock className="h-6 w-6 text-gray-600" />
-              <h2 className="text-xl font-semibold">Security</h2>
+        {/* Security card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-gray-500" />
+              <h2 className="text-sm font-semibold text-gray-900">Security</h2>
             </div>
             {!showPasswordForm && (
-              <Button
-                onClick={() => setShowPasswordForm(true)}
-                variant="outline"
-              >
+              <button onClick={() => setShowPasswordForm(true)} className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
                 Change Password
-              </Button>
+              </button>
             )}
           </div>
-
           {showPasswordForm ? (
             <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Password
-                </label>
-                <Input
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      currentPassword: e.target.value,
-                    })
-                  }
-                  placeholder="Enter your current password"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Password
-                </label>
-                <Input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      newPassword: e.target.value,
-                    })
-                  }
-                  placeholder="Enter new password (min. 6 characters)"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm New Password
-                </label>
-                <Input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  placeholder="Confirm new password"
-                  required
-                />
-              </div>
-
-              {passwordError && (
-                <div className="bg-red-50 border border-red-200 rounded p-3">
-                  <p className="text-red-800 text-sm">{passwordError}</p>
-                </div>
-              )}
-
-              {passwordSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded p-3">
-                  <p className="text-green-800 text-sm">{passwordSuccess}</p>
-                </div>
-              )}
-
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={isChangingPassword}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
+              <Field label="Current Password">
+                <input type="password" value={passwordData.currentPassword} onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })} className={inputCls} placeholder="Enter current password" required />
+              </Field>
+              <Field label="New Password">
+                <input type="password" value={passwordData.newPassword} onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })} className={inputCls} placeholder="At least 6 characters" required />
+              </Field>
+              <Field label="Confirm New Password">
+                <input type="password" value={passwordData.confirmPassword} onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} className={inputCls} placeholder="Confirm new password" required />
+              </Field>
+              {passwordError && <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-2.5 text-sm text-red-600">{passwordError}</div>}
+              {passwordSuccess && <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5 text-sm text-emerald-600">{passwordSuccess}</div>}
+              <div className="flex gap-2 pt-1">
+                <button type="submit" disabled={isChangingPassword} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">
                   {isChangingPassword ? 'Updating...' : 'Update Password'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowPasswordForm(false);
-                    setPasswordData({
-                      currentPassword: '',
-                      newPassword: '',
-                      confirmPassword: '',
-                    });
-                    setPasswordError('');
-                    setPasswordSuccess('');
-                  }}
-                >
+                </button>
+                <button type="button" onClick={() => { setShowPasswordForm(false); setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' }); setPasswordError(''); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors">
                   Cancel
-                </Button>
+                </button>
               </div>
             </form>
           ) : (
-            <p className="text-gray-600">
-              Keep your account secure by updating your password periodically.
-            </p>
+            <p className="text-sm text-gray-500">Keep your account secure by updating your password periodically.</p>
           )}
-        </Card>
+        </div>
 
-        {/* Logout Button */}
-        <div className="flex justify-between items-center">
-          <div />
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-red-200 text-red-600 hover:bg-red-50"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+        {/* Logout */}
+        <div className="flex justify-end">
+          <button onClick={() => { logout(); navigate('/login'); }} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
         </div>
       </div>
     </div>

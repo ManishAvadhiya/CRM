@@ -160,3 +160,47 @@ public class ChangePasswordResponseDto
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// DTO for returning user list with full details
+/// </summary>
+public class UserListDto
+{
+    public int UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? LastLogin { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// DTO for updating user details
+/// </summary>
+public class UpdateUserRequestDto
+{
+    [Required]
+    public string Name { get; set; } = string.Empty;
+    
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+    
+    public string? Phone { get; set; }
+}
+
+/// <summary>
+/// DTO for creating user with login credentials (response)
+/// </summary>
+public class CreateUserWithCredentialsDto
+{
+    public int UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string LoginId { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+}

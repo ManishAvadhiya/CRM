@@ -8,6 +8,7 @@ import type {
   Notification,
   DashboardStats,
   Activity,
+  User,
 } from '@/types';
 
 // Customers API
@@ -145,6 +146,77 @@ export const dashboardApi = {
     const { data } = await apiClient.get<ApiResponse<Activity[]>>(
       '/dashboard/recent-activities',
       { params: { count } }
+    );
+    return data.data;
+  },
+};
+
+// Users API
+export const usersApi = {
+  getAll: async () => {
+    const { data } = await apiClient.get<ApiResponse<User[]>>('/users');
+    // console.log(data.data);
+    return data.data;
+  },
+
+  getMyPartners: async () => {
+    const { data } = await apiClient.get<ApiResponse<User[]>>('/users/my-partners');
+    return data.data;
+  },
+
+  getById: async (id: number) => {
+    const { data } = await apiClient.get<ApiResponse<User>>(`/users/${id}`);
+    return data.data;
+  },
+
+  getCurrentProfile: async () => {
+    const { data } = await apiClient.get<ApiResponse<User>>('/users/profile');
+    return data.data;
+  },
+
+  createMarketing: async (userData: { name: string; email: string; phone?: string; password: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(
+      '/users/create-marketing',
+      userData
+    );
+    return data.data;
+  },
+
+  createPartner: async (partnerData: { name: string; email: string; phone?: string; password: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(
+      '/users/create-partner',
+      partnerData
+    );
+    return data.data;
+  },
+
+  update: async (id: number, userData: { name: string; email: string; phone?: string }) => {
+    const { data } = await apiClient.put<ApiResponse<User>>(
+      `/users/${id}`,
+      userData
+    );
+    return data.data;
+  },
+
+  delete: async (id: number) => {
+    const { data } = await apiClient.delete<ApiResponse<string>>(
+      `/users/${id}`
+    );
+    return data.data;
+  },
+
+  disable: async (id: number) => {
+    const { data } = await apiClient.put<ApiResponse<string>>(
+      `/users/${id}/disable`,
+      {}
+    );
+    return data.data;
+  },
+
+  enable: async (id: number) => {
+    const { data } = await apiClient.put<ApiResponse<string>>(
+      `/users/${id}/enable`,
+      {}
     );
     return data.data;
   },

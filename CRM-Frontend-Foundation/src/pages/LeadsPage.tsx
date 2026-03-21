@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadsApi } from '@/services/leadsService';
 import { formatDate } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
 import type { Lead } from '@/types';
 import { Users, Plus, Search, Eye, Edit, Trash2, UserPlus, TrendingUp, CheckCircle, Clock, XCircle, X } from 'lucide-react';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 // ─── design helpers ──────────────────────────────────────────────────────────
 const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500'];
@@ -187,6 +190,8 @@ const STATUS_FILTERS = ['All', 'New', 'Demo', 'Converted', 'Lost'];
 
 export default function LeadsPage() {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const showAuditColumns = user?.role === 'ManagementAdmin' || user?.role === 'Marketing';
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -305,6 +310,8 @@ export default function LeadsPage() {
     return filtered;
   }, [leads, statusFilter, searchTerm]);
 
+  const pagination = usePagination(filteredLeads, 10);
+
   const statusCounts: Record<string, number> = { All: leadCounts.total, New: leadCounts.New, Demo: leadCounts.Demo, Converted: leadCounts.Converted, Lost: leadCounts.Lost };
 
   return (
@@ -379,25 +386,33 @@ export default function LeadsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['Company', 'Contact', 'Status', 'Rating', 'Source', 'Created', ''].map(h => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
-                  ))}
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Company</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Contact</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Rating</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Source</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Created</th>
+                  {showAuditColumns && (
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Created By</th>
+                  )}
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {isLoading ? (
-                  <tr><td colSpan={7} className="py-12 text-center text-sm text-gray-400">Loading leads...</td></tr>
+                  <tr><td colSpan={showAuditColumns ? 8 : 7} className="py-12 text-center text-sm text-gray-400">Loading leads...</td></tr>
                 ) : filteredLeads.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={showAuditColumns ? 8 : 7} className="py-16 text-center">
                       <Users className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                       <p className="text-sm text-gray-400">No leads found</p>
                     </td>
                   </tr>
-                ) : filteredLeads.map(lead => {
+                ) : pagination.paginatedItems.map(lead => {
                   const statusStr = getStatusDisplay(lead.status);
                   const ratingStr = getRatingDisplay(lead.rating);
                   const sourceStr = getSourceDisplay(lead.leadSource);
+                  const isConverted = statusStr === 'Converted';
                   return (
                     <tr key={lead.leadId} className="group hover:bg-gray-50/70 transition-colors">
                       <td className="px-5 py-4">
@@ -423,24 +438,27 @@ export default function LeadsPage() {
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-500">{sourceStr !== 'N/A' ? sourceStr : <span className="text-gray-300">—</span>}</td>
                       <td className="px-5 py-4 text-sm text-gray-400">{formatDate(lead.createdAt)}</td>
+                      {showAuditColumns && (
+                        <td className="px-5 py-4 text-sm text-gray-600">{lead.createdByUser?.name || 'Unknown'}</td>
+                      )}
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => navigate(`/dashboard/leads/${lead.leadId}`)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-colors" title="View">
-                            <Eye className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => navigate(`/dashboard/leads/${lead.leadId}`)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors" title="View">
+                            <Eye className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleEdit(lead)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
-                            <Edit className="w-3.5 h-3.5" />
+                          <button onClick={() => handleEdit(lead)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors" title="Edit">
+                            <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => { if (confirm('Convert this lead to a customer?')) convertMutation.mutate(lead.leadId); }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
-                            title="Convert to Customer"
-                            disabled={convertMutation.isPending}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${isConverted ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800/30 dark:text-gray-600' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50'}`}
+                            title={isConverted ? "Already converted" : "Convert to Customer"}
+                            disabled={isConverted || convertMutation.isPending}
                           >
-                            <UserPlus className="w-3.5 h-3.5" />
+                            <UserPlus className="w-4 h-4" />
                           </button>
-                          <button onClick={() => setDeleteLead(lead)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Delete">
-                            <Trash2 className="w-3.5 h-3.5" />
+                          <button onClick={() => setDeleteLead(lead)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors" title="Delete">
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -450,6 +468,24 @@ export default function LeadsPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Showing <span className="font-semibold">{filteredLeads.length === 0 ? 0 : (pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-semibold">{Math.min(pagination.currentPage * pagination.itemsPerPage, filteredLeads.length)}</span> of <span className="font-semibold">{filteredLeads.length}</span>
+          </p>
+          <PaginationControls
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            itemsPerPage={pagination.itemsPerPage}
+            totalItems={filteredLeads.length}
+            onPageChange={pagination.goToPage}
+            onItemsPerPageChange={pagination.setItemsPerPage}
+            pageNumbers={pagination.pageNumbers}
+            hasNextPage={pagination.currentPage < pagination.totalPages}
+            hasPreviousPage={pagination.currentPage > 1}
+          />
         </div>
       </div>
     </div>

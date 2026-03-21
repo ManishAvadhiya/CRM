@@ -8,6 +8,9 @@ import type {
   Notification,
   DashboardStats,
   Activity,
+  ActivityListItem,
+  CreateActivityRequest,
+  UpdateActivityRequest,
   User,
   PartnerEarning,
 } from '@/types';
@@ -243,6 +246,40 @@ export const usersApi = {
       `/users/${id}/enable`,
       {}
     );
+    return data.data;
+  },
+};
+
+// Activities API
+export const activitiesApi = {
+  getAll: async (params?: {
+    relatedToType?: string;
+    relatedToId?: number;
+    type?: string;
+  }) => {
+    const { data } = await apiClient.get<ApiResponse<ActivityListItem[]>>('/activities', {
+      params,
+    });
+    return data.data;
+  },
+
+  getById: async (id: number) => {
+    const { data } = await apiClient.get<ApiResponse<Activity>>(`/activities/${id}`);
+    return data.data;
+  },
+
+  create: async (payload: CreateActivityRequest) => {
+    const { data } = await apiClient.post<ApiResponse<Activity>>('/activities', payload);
+    return data.data;
+  },
+
+  update: async (id: number, payload: UpdateActivityRequest) => {
+    const { data } = await apiClient.put<ApiResponse<Activity>>(`/activities/${id}`, payload);
+    return data.data;
+  },
+
+  delete: async (id: number) => {
+    const { data } = await apiClient.delete<ApiResponse<boolean>>(`/activities/${id}`);
     return data.data;
   },
 };

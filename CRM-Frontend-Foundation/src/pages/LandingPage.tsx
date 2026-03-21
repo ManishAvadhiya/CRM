@@ -18,6 +18,7 @@ import {
   Layers,
   Play,
 } from 'lucide-react';
+import { BrandLogo } from '@/components/branding/BrandLogo';
 
 const NAV_LINKS = ['Features', 'Pricing', 'Testimonials', 'FAQ'];
 
@@ -160,14 +161,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-              <Zap size={18} className="text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Nex<span className="text-indigo-600">CRM</span>
-            </span>
-          </div>
+          <BrandLogo />
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8">

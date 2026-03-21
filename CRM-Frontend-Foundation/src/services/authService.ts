@@ -19,6 +19,16 @@ export const authApi = {
     return data.data;
   },
 
+  refresh: async () => {
+    const { data } = await apiClient.post<ApiResponse<LoginResponse>>('/auth/refresh', {});
+    return data.data;
+  },
+
+  logout: async () => {
+    const { data } = await apiClient.post<ApiResponse<boolean>>('/auth/logout', {});
+    return data.data;
+  },
+
   register: async (userData: {
     name: string;
     email: string;

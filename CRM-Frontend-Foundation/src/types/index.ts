@@ -94,6 +94,7 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   assignedToUser?: User;
+  createdByUser?: User;
 }
 
 // Lead History types
@@ -139,6 +140,8 @@ export interface LeadDetailResponse {
   lostReason?: string;
   createdBy?: number;
   createdByName?: string;
+  updatedByUserId?: number;
+  updatedByName?: string;
   createdAt: string;
   updatedAt: string;
   history: LeadHistory[];
@@ -229,6 +232,7 @@ export interface Order {
   customer?: Customer;
   productVariant?: ProductVariant;
   subscription?: Subscription;
+  createdByUser?: User;
 }
 
 export interface PartnerEarning {
@@ -300,6 +304,49 @@ export interface Activity {
   updatedAt: string;
   assignedToUser?: User;
   createdByUser?: User;
+}
+
+export interface ActivityListItem {
+  activityId: number;
+  name: string;
+  type: ActivityType | number;
+  description?: string;
+  outcome?: string;
+  date: string;
+  nextFollowUp?: string;
+  createdBy: string;
+  relatedToType: RelatedToType | number;
+  relatedToId: number;
+}
+
+export interface CreateActivityRequest {
+  activityType: ActivityType | number;
+  subject?: string;
+  description?: string;
+  relatedToType: RelatedToType | number;
+  relatedToId: number;
+  activityDate: string;
+  dueDate?: string;
+  status?: ActivityStatus | number;
+  priority?: ActivityPriority | number;
+  duration?: number;
+  location?: string;
+  outcome?: string;
+  assignedTo?: number;
+}
+
+export interface UpdateActivityRequest {
+  activityType: ActivityType | number;
+  subject?: string;
+  description?: string;
+  activityDate: string;
+  dueDate?: string;
+  status: ActivityStatus | number;
+  priority: ActivityPriority | number;
+  duration?: number;
+  location?: string;
+  outcome?: string;
+  assignedTo?: number;
 }
 
 // Notification types

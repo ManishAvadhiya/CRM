@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useQuery } from '@tanstack/react-query';
@@ -11,12 +12,15 @@ import {
   Package,
   Banknote,
   Bell,
+  PhoneCall,
   User,
   ChevronLeft,
   LogOut,
 } from 'lucide-react';
 import { notificationsApi } from '@/services';
+import { authApi } from '@/services/authService';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/branding/BrandLogo';
 
 const fullNavigation = [
   { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -25,6 +29,7 @@ const fullNavigation = [
   { name: 'Orders', to: '/dashboard/orders', icon: ShoppingCart },
   { name: 'Subscriptions', to: '/dashboard/subscriptions', icon: RefreshCw },
   { name: 'Products', to: '/dashboard/products', icon: Package },
+  { name: 'Activities', to: '/dashboard/activities', icon: PhoneCall },
   { name: 'Notifications', to: '/dashboard/notifications', icon: Bell },
   { name: 'User Management', to: '/dashboard/users', icon: Users },
   { name: 'Account', to: '/dashboard/account', icon: User },
@@ -37,6 +42,7 @@ const marketingNavigation = [
   { name: 'Orders', to: '/dashboard/orders', icon: ShoppingCart },
   { name: 'Subscriptions', to: '/dashboard/subscriptions', icon: RefreshCw },
   { name: 'Products', to: '/dashboard/products', icon: Package },
+  { name: 'Activities', to: '/dashboard/activities', icon: PhoneCall },
   { name: 'Notifications', to: '/dashboard/notifications', icon: Bell },
   { name: 'My Partners', to: '/dashboard/users', icon: Users },
   { name: 'Account', to: '/dashboard/account', icon: User },
@@ -49,6 +55,7 @@ const partnerNavigation = [
   { name: 'My Orders', to: '/dashboard/orders', icon: ShoppingCart },
   { name: 'My Subscriptions', to: '/dashboard/subscriptions', icon: RefreshCw },
   { name: 'Products', to: '/dashboard/products', icon: Package },
+  { name: 'Activities', to: '/dashboard/activities', icon: PhoneCall },
   { name: 'My Earnings', to: '/dashboard/earnings', icon: Banknote },
   { name: 'Account', to: '/dashboard/account', icon: User },
 ];
@@ -76,17 +83,19 @@ function Tooltip({
   const hideTooltip = () => setPosition(null);
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={(e) => showTooltip(e.currentTarget)}
-      onMouseLeave={hideTooltip}
-      onFocus={(e) => showTooltip(e.currentTarget)}
-      onBlur={hideTooltip}
-    >
-      {children}
-      {!disabled && position && (
+    <>
+      <div
+        className="relative"
+        onMouseEnter={(e) => showTooltip(e.currentTarget)}
+        onMouseLeave={hideTooltip}
+        onFocus={(e) => showTooltip(e.currentTarget)}
+        onBlur={hideTooltip}
+      >
+        {children}
+      </div>
+      {!disabled && position && createPortal(
         <div
-          className="fixed z-[80] pointer-events-none"
+          className="fixed z-[9999] pointer-events-none"
           style={{ top: position.top, left: position.left }}
         >
           <div className="relative -translate-y-1/2 ml-2">
@@ -95,9 +104,10 @@ function Tooltip({
             </span>
             <span className="absolute left-0 top-1/2 -translate-x-[5px] -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45 rounded-[1px]" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
@@ -127,7 +137,13 @@ export default function Sidebar() {
   });
   const unreadCount = notifications?.length || 0;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Clear client auth state even if backend logout fails.
+    }
+
     logout();
     navigate('/login');
   };
@@ -139,24 +155,23 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'relative flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 ease-in-out shrink-0',
+        'relative flex flex-col h-full bg-white dark:bg-slate-950 border-r border-gray-100 dark:border-slate-900 transition-all duration-300 ease-in-out shrink-0',
         collapsed ? 'w-[68px]' : 'w-[240px]'
       )}
     >
       {/* Brand */}
       <div
         className={cn(
-          'flex items-center h-16 border-b border-gray-100 shrink-0',
+          'flex items-center h-16 border-b border-gray-100 dark:border-slate-900 shrink-0',
           collapsed ? 'justify-center px-0' : 'px-5 gap-3'
         )}
       >
-        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
-          <span className="text-white font-black text-sm">N</span>
-        </div>
-        {!collapsed && (
+        {collapsed ? (
+          <BrandLogo compact />
+        ) : (
           <div className="overflow-hidden">
-            <p className="text-gray-900 font-bold text-[15px] leading-tight tracking-tight">NexCRM</p>
-            <p className="text-gray-400 text-[10px] font-medium uppercase tracking-widest">Platform</p>
+            <BrandLogo />
+            <p className="text-gray-400 text-[10px] font-medium uppercase tracking-widest ml-10 -mt-0.5">Platform</p>
           </div>
         )}
       </div>
@@ -172,7 +187,7 @@ export default function Sidebar() {
                 collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                 isActive
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-50 dark:hover:bg-[#131b2d]'
               );
 
             const inner = (isActive: boolean) => (
@@ -187,7 +202,7 @@ export default function Sidebar() {
                   </span>
                 )}
                 {collapsed && isNotif && unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
                 )}
               </>
             );
@@ -213,7 +228,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Divider */}
-      <div className="mx-3 h-px bg-gray-100" />
+      <div className="mx-3 h-px bg-gray-100 dark:bg-slate-900" />
 
       {/* Footer — User + Logout */}
       <div className={cn('shrink-0 py-3 space-y-0.5', collapsed ? 'px-2' : 'px-3')}>
@@ -223,7 +238,7 @@ export default function Sidebar() {
               <button
                 onClick={() => navigate('/dashboard/account')}
                 className={cn(
-                  'w-full flex justify-center p-2.5 rounded-xl hover:bg-gray-50 transition-colors'
+                  'w-full flex justify-center p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-[#131b2d] transition-colors'
                 )}
               >
                 <div
@@ -239,7 +254,7 @@ export default function Sidebar() {
             <Tooltip label="Sign Out">
               <button
                 onClick={handleLogout}
-                className="w-full flex justify-center p-2.5 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                className="w-full flex justify-center p-2.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
               >
                 <LogOut className="w-[18px] h-[18px]" />
               </button>
@@ -249,7 +264,7 @@ export default function Sidebar() {
           <>
             <button
               onClick={() => navigate('/dashboard/account')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-[#131b2d] transition-colors text-left"
             >
               <div
                 className={cn(
@@ -268,7 +283,7 @@ export default function Sidebar() {
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
             >
               <LogOut className="w-[18px] h-[18px] shrink-0" />
               <span className="text-[13px] font-medium">Sign Out</span>
@@ -280,7 +295,7 @@ export default function Sidebar() {
       {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[68px] w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-md hover:border-indigo-300 hover:bg-indigo-50 transition-all z-10"
+        className="absolute -right-3 top-[68px] w-6 h-6 rounded-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 flex items-center justify-center shadow-md hover:border-indigo-300 dark:hover:border-slate-600 hover:bg-indigo-50 dark:hover:bg-[#131b2d] transition-all z-10"
       >
         <ChevronLeft
           className={cn(

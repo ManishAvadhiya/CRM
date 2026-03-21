@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using CRM.API.Data;
 using CRM.API.DTOs;
 using CRM.API.Models;
@@ -51,8 +52,11 @@ public class AuthController : ControllerBase
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Generate JWT token
-            var token = _jwtHelper.GenerateToken(user);
+            // Generate access + refresh tokens
+            var token = _jwtHelper.GenerateAccessToken(user);
+            var refreshToken = _jwtHelper.GenerateRefreshToken(user);
+            SetAccessTokenCookie(token);
+            SetRefreshTokenCookie(refreshToken);
 
             var response = new LoginResponseDto
             {
@@ -72,6 +76,65 @@ public class AuthController : ControllerBase
             _logger.LogError($"Login error: {ex.Message}");
             return StatusCode(500, ApiResponse<LoginResponseDto>.ErrorResponse("An error occurred during login"));
         }
+    }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> RefreshToken()
+    {
+        try
+        {
+            if (!Request.Cookies.TryGetValue("refresh_token", out var refreshToken) || string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return Unauthorized(ApiResponse<LoginResponseDto>.ErrorResponse("Refresh token is missing"));
+            }
+
+            var principal = _jwtHelper.ValidateRefreshToken(refreshToken);
+            if (principal == null)
+            {
+                return Unauthorized(ApiResponse<LoginResponseDto>.ErrorResponse("Invalid refresh token"));
+            }
+
+            var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ApiResponse<LoginResponseDto>.ErrorResponse("Invalid refresh token payload"));
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId && u.IsActive);
+            if (user == null)
+            {
+                return Unauthorized(ApiResponse<LoginResponseDto>.ErrorResponse("User no longer active"));
+            }
+
+            var accessToken = _jwtHelper.GenerateAccessToken(user);
+            var newRefreshToken = _jwtHelper.GenerateRefreshToken(user);
+            SetAccessTokenCookie(accessToken);
+            SetRefreshTokenCookie(newRefreshToken);
+
+            var response = new LoginResponseDto
+            {
+                UserId = user.UserId,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Token = accessToken
+            };
+
+            return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(response, "Token refreshed successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Refresh token error: {ex.Message}");
+            return StatusCode(500, ApiResponse<LoginResponseDto>.ErrorResponse("An error occurred while refreshing token"));
+        }
+    }
+
+    [HttpPost("logout")]
+    public ActionResult<ApiResponse<bool>> Logout()
+    {
+        ClearAccessTokenCookie();
+        ClearRefreshTokenCookie();
+        return Ok(ApiResponse<bool>.SuccessResponse(true, "Logged out successfully"));
     }
 
     [HttpPost("forgot-password")]
@@ -177,5 +240,69 @@ public class AuthController : ControllerBase
             _logger.LogError($"Reset password error: {ex.Message}");
             return StatusCode(500, ApiResponse<ResetPasswordResponseDto>.ErrorResponse("An error occurred during password reset"));
         }
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        var isHttps = Request.IsHttps;
+        var sameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax;
+        var refreshExpiryMinutes = int.Parse(HttpContext.RequestServices.GetRequiredService<IConfiguration>()
+            .GetSection("JwtSettings")["RefreshExpiryMinutes"] ?? "10080");
+
+        Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = sameSite,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(refreshExpiryMinutes),
+            Path = "/"
+        });
+    }
+
+    private void SetAccessTokenCookie(string accessToken)
+    {
+        var isHttps = Request.IsHttps;
+        var sameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax;
+        var accessExpiryMinutes = int.Parse(HttpContext.RequestServices.GetRequiredService<IConfiguration>()
+            .GetSection("JwtSettings")["ExpiryMinutes"] ?? "1440");
+
+        Response.Cookies.Append("access_token", accessToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = sameSite,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(accessExpiryMinutes),
+            Path = "/"
+        });
+    }
+
+    private void ClearRefreshTokenCookie()
+    {
+        var isHttps = Request.IsHttps;
+        var sameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax;
+
+        Response.Cookies.Append("refresh_token", string.Empty, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = sameSite,
+            Expires = DateTimeOffset.UtcNow.AddDays(-1),
+            Path = "/"
+        });
+    }
+
+    private void ClearAccessTokenCookie()
+    {
+        var isHttps = Request.IsHttps;
+        var sameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax;
+
+        Response.Cookies.Append("access_token", string.Empty, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = sameSite,
+            Expires = DateTimeOffset.UtcNow.AddDays(-1),
+            Path = "/"
+        });
     }
 }

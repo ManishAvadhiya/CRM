@@ -59,6 +59,8 @@ public class LeadDetailResponseDto
     public string? LostReason { get; set; }
     public int? CreatedBy { get; set; }
     public string? CreatedByName { get; set; }
+    public int? UpdatedByUserId { get; set; }
+    public string? UpdatedByName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<LeadHistoryDto> History { get; set; } = new();

@@ -479,6 +479,12 @@ export function LeadDetailPage() {
                     <p className="text-xs text-gray-400 mt-0.5">{format(new Date(lead.updatedAt), 'h:mm a')}</p>
                   </div>
                 )}
+                {lead.updatedByName && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Last Updated By</p>
+                    <p className="text-sm font-medium text-gray-900">{lead.updatedByName}</p>
+                  </div>
+                )}
                 {lead.rating && (
                   <div>
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Rating</p>

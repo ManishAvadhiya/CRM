@@ -42,6 +42,7 @@ public class OrdersController : ControllerBase
             var query = _context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.ProductVariant)
+                .Include(o => o.CreatedByUser)
                 .AsQueryable();
 
             // Role-based visibility
@@ -76,6 +77,7 @@ public class OrdersController : ControllerBase
             var order = await _context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.ProductVariant)
+                .Include(o => o.CreatedByUser)
                 .Include(o => o.Subscription)
                 .FirstOrDefaultAsync(o => o.OrderId == id);
 

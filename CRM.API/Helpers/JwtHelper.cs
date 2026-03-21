@@ -15,13 +15,29 @@ public class JwtHelper
         _configuration = configuration;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateAccessToken(User user)
+    {
+        var expiryMinutes = int.Parse(_configuration.GetSection("JwtSettings")["ExpiryMinutes"] ?? "1440");
+        return GenerateToken(user, expiryMinutes, "access");
+    }
+
+    public string GenerateRefreshToken(User user)
+    {
+        var refreshExpiryMinutes = int.Parse(_configuration.GetSection("JwtSettings")["RefreshExpiryMinutes"] ?? "10080");
+        return GenerateToken(user, refreshExpiryMinutes, "refresh");
+    }
+
+    public ClaimsPrincipal? ValidateRefreshToken(string token)
+    {
+        return ValidateToken(token, "refresh");
+    }
+
+    private string GenerateToken(User user, int expiryMinutes, string tokenType)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"];
         var issuer = jwtSettings["Issuer"];
         var audience = jwtSettings["Audience"];
-        var expiryMinutes = int.Parse(jwtSettings["ExpiryMinutes"] ?? "1440");
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -32,6 +48,7 @@ public class JwtHelper
             new Claim(ClaimTypes.Name, user.Name),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim("token_type", tokenType),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
@@ -44,5 +61,49 @@ public class JwtHelper
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private ClaimsPrincipal? ValidateToken(string token, string expectedTokenType)
+    {
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var secretKey = jwtSettings["SecretKey"];
+        var issuer = jwtSettings["Issuer"];
+        var audience = jwtSettings["Audience"];
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(secretKey!);
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidateAudience = true,
+                ValidAudience = audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            if (validatedToken is not JwtSecurityToken jwtToken ||
+                !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return null;
+            }
+
+            var tokenType = principal.FindFirst("token_type")?.Value;
+            if (!string.Equals(tokenType, expectedTokenType, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

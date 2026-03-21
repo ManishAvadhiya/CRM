@@ -188,6 +188,18 @@ public class LeadsController : ControllerBase
             lead.Notes = updatedLead.Notes;
             lead.UpdatedAt = DateTime.UtcNow;
 
+            // Keep an audit trail of direct lead edits.
+            var updateHistory = new LeadHistory
+            {
+                LeadId = id,
+                ChangedByUserId = currentUserId,
+                ChangeType = "DetailsAdded",
+                Description = "Lead details updated",
+                ChangedAt = DateTime.UtcNow
+            };
+
+            _context.LeadHistories.Add(updateHistory);
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation($"Lead {id} updated by {userRole} user {currentUserId}");
@@ -344,6 +356,8 @@ public class LeadsController : ControllerBase
                 })
                 .ToListAsync();
 
+            var latestUpdate = history.FirstOrDefault();
+
             var response = new LeadDetailResponseDto
             {
                 LeadId = lead.LeadId,
@@ -366,6 +380,8 @@ public class LeadsController : ControllerBase
                 LostReason = lead.LostReason,
                 CreatedBy = lead.CreatedBy,
                 CreatedByName = lead.CreatedByUser?.Name,
+                UpdatedByUserId = latestUpdate?.ChangedByUserId,
+                UpdatedByName = latestUpdate?.ChangedByUserName,
                 CreatedAt = lead.CreatedAt,
                 UpdatedAt = lead.UpdatedAt,
                 History = history

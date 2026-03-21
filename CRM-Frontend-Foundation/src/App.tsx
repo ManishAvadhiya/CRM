@@ -14,6 +14,7 @@ import SubscriptionsPage from './pages/SubscriptionsPage.tsx';
 import ProductVariantsPage from './pages/ProductVariantsPage.tsx';
 import NotificationsPage from './pages/NotificationsPage.tsx';
 import EarningsPage from './pages/EarningsPage.tsx';
+import ActivityPage from './pages/ActivityPage.tsx';
 import { AccountDetailsPage } from './pages/AccountDetailsPage';
 import { LeadDetailPage } from './pages/LeadDetailPage';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -95,6 +96,7 @@ function App() {
             <Route path="products" element={<ProductVariantsPage />} />
             <Route path="earnings" element={<EarningsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="activities" element={<ActivityPage />} />
             <Route path="account" element={<AccountDetailsPage />} />
             
             {/* User Management Routes */}

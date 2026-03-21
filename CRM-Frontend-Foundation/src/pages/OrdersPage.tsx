@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ordersApi, customersApi, productVariantsApi } from '@/services';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
 import {
   UserLicenseTypeEnum,
   PaymentStatusMap,
@@ -11,8 +12,10 @@ import {
 import type { Order } from '@/types';
 import {
   ShoppingCart, Plus, Search, Eye, CheckCircle, XCircle, Clock,
-  Truck, FileText, X, ChevronRight,
+  Truck, FileText, X, ChevronRight, Filter,
 } from 'lucide-react';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 const inputCls =
   'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white ' +
@@ -59,12 +62,68 @@ function SlidePanel({
   );
 }
 
+function ConfirmActionModal({
+  open,
+  title,
+  message,
+  confirmText,
+  isLoading,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmText: string;
+  isLoading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50" onClick={onCancel} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          <p className="text-sm text-gray-500 mt-2">{message}</p>
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={onCancel}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Confirming...' : confirmText}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function OrdersPage() {
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  const showAuditColumns = user?.role === 'ManagementAdmin' || user?.role === 'Marketing';
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [amountFrom, setAmountFrom] = useState('');
+  const [amountTo, setAmountTo] = useState('');
   const [formData, setFormData] = useState<Partial<Order>>({
     userLicenseType: 'SingleUser',
     quantity: 1,
@@ -124,6 +183,7 @@ export default function OrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      setConfirmOrder(null);
       setSelectedOrder(null);
       setIsDetailOpen(false);
     },
@@ -154,10 +214,8 @@ export default function OrdersPage() {
     createMutation.mutate(orderData);
   };
 
-  const handleConfirm = (id: number) => {
-    if (confirm('Confirm this order? This will create a subscription automatically.')) {
-      confirmMutation.mutate(id);
-    }
+  const handleConfirm = (order: Order) => {
+    setConfirmOrder(order);
   };
 
   const handleViewDetail = (order: Order) => {
@@ -167,15 +225,49 @@ export default function OrdersPage() {
 
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
-    if (!searchTerm) return orders;
-    const s = searchTerm.toLowerCase();
-    return orders.filter(
-      (o) =>
-        o.orderNumber?.toLowerCase().includes(s) ||
-        o.customer?.companyName?.toLowerCase().includes(s) ||
-        o.productVariant?.variantName?.toLowerCase().includes(s)
-    );
-  }, [orders, searchTerm]);
+    let filtered = orders;
+
+    // Search filter
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (o) =>
+          o.orderNumber?.toLowerCase().includes(s) ||
+          o.customer?.companyName?.toLowerCase().includes(s) ||
+          o.productVariant?.variantName?.toLowerCase().includes(s)
+      );
+    }
+
+    // Status filter
+    if (statusFilter) {
+      filtered = filtered.filter((o) => getOrderStatusString(o.status) === statusFilter);
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      filtered = filtered.filter((o) => new Date(o.createdAt) >= fromDate);
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((o) => new Date(o.createdAt) <= toDate);
+    }
+
+    // Amount range filter
+    if (amountFrom) {
+      const minAmount = Number(amountFrom);
+      filtered = filtered.filter((o) => (o.totalAmount || 0) >= minAmount);
+    }
+    if (amountTo) {
+      const maxAmount = Number(amountTo);
+      filtered = filtered.filter((o) => (o.totalAmount || 0) <= maxAmount);
+    }
+
+    return filtered;
+  }, [orders, searchTerm, statusFilter, dateFrom, dateTo, amountFrom, amountTo]);
+
+  const pagination = usePagination(filteredOrders, 10);
 
   const getStatusBadge = (status: number | string) => {
     const t = getOrderStatusString(status);
@@ -233,16 +325,105 @@ export default function OrdersPage() {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50"
-            />
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-4 h-4 text-gray-600" />
+              <h3 className="text-sm font-semibold text-gray-700">Filters</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</label>
+                <select
+                  value={statusFilter || ''}
+                  onChange={(e) => setStatusFilter(e.target.value || undefined)}
+                  className={inputCls}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Date From */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">From Date</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* Date To */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">To Date</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* Amount Range */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Amount</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={amountFrom}
+                    onChange={(e) => setAmountFrom(e.target.value)}
+                    className={`${inputCls} flex-1`}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={amountTo}
+                    onChange={(e) => setAmountTo(e.target.value)}
+                    className={`${inputCls} flex-1`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {(statusFilter || dateFrom || dateTo || amountFrom || amountTo) && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => {
+                    setStatusFilter(undefined);
+                    setDateFrom('');
+                    setDateTo('');
+                    setAmountFrom('');
+                    setAmountTo('');
+                  }}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Search */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50"
+              />
+            </div>
           </div>
         </div>
 
@@ -261,7 +442,7 @@ export default function OrdersPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['Order #', 'Customer', 'Product', 'Details', 'Amount', 'Status', 'Date', ''].map((h) => (
+                  {['Order #', 'Customer', 'Product', 'Details', 'Amount', 'Status', 'Date'].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider"
@@ -269,10 +450,17 @@ export default function OrdersPage() {
                       {h}
                     </th>
                   ))}
+                  {showAuditColumns && (
+                    <>
+                      <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Created By</th>
+                      <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Updated</th>
+                    </>
+                  )}
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredOrders.map((order) => (
+                {pagination.paginatedItems.map((order) => (
                   <tr key={order.orderId} className="group hover:bg-gray-50/60 transition-colors">
                     <td className="px-4 py-4">
                       <span className="text-sm font-semibold text-indigo-600">{order.orderNumber}</span>
@@ -295,11 +483,21 @@ export default function OrdersPage() {
                     <td className="px-4 py-4">
                       <span className="text-sm text-gray-500">{formatDate(order.orderDate)}</span>
                     </td>
+                    {showAuditColumns && (
+                      <>
+                        <td className="px-4 py-4">
+                          <span className="text-sm text-gray-600">{order.createdByUser?.name || `User #${order.createdBy}`}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-sm text-gray-500">{formatDate(order.updatedAt)}</span>
+                        </td>
+                      </>
+                    )}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
                         {!isNonEditable(order.status) && (
                           <button
-                            onClick={() => handleConfirm(order.orderId)}
+                            onClick={() => handleConfirm(order)}
                             disabled={confirmMutation.isPending}
                             className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
                             title="Confirm Order"
@@ -320,6 +518,26 @@ export default function OrdersPage() {
                 ))}
               </tbody>
             </table>
+          )}
+
+          {/* Pagination */}
+          {filteredOrders.length > 0 && (
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between flex-col sm:flex-row gap-4">
+              <p className="text-sm text-gray-500">
+                Showing <span className="font-semibold">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-semibold">{Math.min(pagination.currentPage * pagination.itemsPerPage, filteredOrders.length)}</span> of <span className="font-semibold">{filteredOrders.length}</span> orders
+              </p>
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                itemsPerPage={pagination.itemsPerPage}
+                totalItems={filteredOrders.length}
+                onPageChange={pagination.goToPage}
+                onItemsPerPageChange={pagination.setItemsPerPage}
+                pageNumbers={pagination.pageNumbers}
+                hasNextPage={pagination.currentPage < pagination.totalPages}
+                hasPreviousPage={pagination.currentPage > 1}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -496,6 +714,18 @@ export default function OrdersPage() {
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Order Date</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">{formatDate(selectedOrder.orderDate)}</p>
               </div>
+              {showAuditColumns && (
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Created By</p>
+                  <p className="text-sm font-medium text-gray-900 mt-0.5">{selectedOrder.createdByUser?.name || `User #${selectedOrder.createdBy}`}</p>
+                </div>
+              )}
+              {showAuditColumns && (
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Last Updated</p>
+                  <p className="text-sm font-medium text-gray-900 mt-0.5">{formatDate(selectedOrder.updatedAt)}</p>
+                </div>
+              )}
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Product</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">{selectedOrder.productVariant?.variantName || '—'}</p>
@@ -558,7 +788,7 @@ export default function OrdersPage() {
 
             {!isNonEditable(selectedOrder.status) && (
               <button
-                onClick={() => handleConfirm(selectedOrder.orderId)}
+                onClick={() => handleConfirm(selectedOrder)}
                 disabled={confirmMutation.isPending}
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
               >
@@ -569,6 +799,24 @@ export default function OrdersPage() {
           </div>
         )}
       </SlidePanel>
+
+      <ConfirmActionModal
+        open={confirmOrder !== null}
+        title="Confirm Order"
+        message={
+          confirmOrder
+            ? `Confirm ${confirmOrder.orderNumber}? This will create a subscription automatically.`
+            : 'Confirm selected order?'
+        }
+        confirmText="Confirm"
+        isLoading={confirmMutation.isPending}
+        onCancel={() => setConfirmOrder(null)}
+        onConfirm={() => {
+          if (confirmOrder) {
+            confirmMutation.mutate(confirmOrder.orderId);
+          }
+        }}
+      />
     </div>
   );
 }

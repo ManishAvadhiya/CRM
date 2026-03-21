@@ -5,6 +5,8 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { getSubscriptionStatusString } from '@/lib/enum-mappings';
 import { Calendar, CheckCircle, AlertCircle, TrendingUp, Clock, Zap, X } from 'lucide-react';
 import type { Subscription } from '@/types';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 function getDaysUntilRenewal(renewalDate: string): number {
   const renewal = new Date(renewalDate);
@@ -114,6 +116,8 @@ export default function SubscriptionsPage() {
     churnRisk: subscriptions.filter(s => !s.autoRenew).length,
   }), [subscriptions, upcomingRenewals]);
 
+  const pagination = usePagination(subscriptions, 10);
+
   return (
     <div className="bg-gray-50 min-h-screen p-6 lg:p-8">
       {selectedSub && <DetailPanel sub={selectedSub} onClose={() => setSelectedSub(null)} />}
@@ -179,7 +183,7 @@ export default function SubscriptionsPage() {
                       <p className="text-sm text-gray-400">No subscriptions found</p>
                     </td>
                   </tr>
-                ) : subscriptions.map((sub) => {
+                ) : pagination.paginatedItems.map((sub) => {
                   const days = getDaysUntilRenewal(sub.renewalDate);
                   return (
                     <tr key={sub.subscriptionId} className="group hover:bg-gray-50/70 transition-colors">
@@ -211,6 +215,26 @@ export default function SubscriptionsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {subscriptions.length > 0 && (
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between flex-col sm:flex-row gap-4">
+              <p className="text-sm text-gray-500">
+                Showing <span className="font-semibold">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-semibold">{Math.min(pagination.currentPage * pagination.itemsPerPage, subscriptions.length)}</span> of <span className="font-semibold">{subscriptions.length}</span> subscriptions
+              </p>
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                itemsPerPage={pagination.itemsPerPage}
+                totalItems={subscriptions.length}
+                onPageChange={pagination.goToPage}
+                onItemsPerPageChange={pagination.setItemsPerPage}
+                pageNumbers={pagination.pageNumbers}
+                hasNextPage={pagination.currentPage < pagination.totalPages}
+                hasPreviousPage={pagination.currentPage > 1}
+              />
+            </div>
+          )}
         </div>
 
         {/* Upcoming Renewals */}

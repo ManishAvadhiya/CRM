@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/services/authService';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
+import { BrandLogo } from '@/components/branding/BrandLogo';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -34,8 +35,8 @@ export default function LoginPage() {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'admin@crm.com',
-      password: 'Admin@123',
+      email: '',
+      password: '',
     },
   });
 
@@ -54,32 +55,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 opacity-10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500 opacity-10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-              <LogIn className="w-7 h-7 text-white" />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#faf5ff,transparent_35%),radial-gradient(circle_at_90%_0%,#f5f3ff,transparent_40%),#f8fafc] p-4 md:p-8 flex items-center justify-center">
+      <div className="w-full max-w-xl rounded-[28px] border border-zinc-200/80 bg-white/95 backdrop-blur-sm p-7 sm:p-10 shadow-[0_20px_80px_rgba(15,23,42,0.18)]">
+        <Card className="w-full border-0 bg-transparent shadow-none">
+          <CardHeader className="px-0 pb-7">
+            <div className="flex items-center justify-between mb-10">
+              <BrandLogo textClassName="text-zinc-900" />
+              <span className="text-sm text-zinc-500 inline-flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" />
+                Sign In
+              </span>
             </div>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-slate-400">Sign in to your CRM account to continue</p>
-        </div>
 
-        {/* Card */}
-        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur-sm shadow-2xl">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-xl text-white">Login</CardTitle>
-            <CardDescription className="text-slate-400">
-              Enter your credentials below
+            <CardTitle className="text-5xl text-zinc-900 font-semibold tracking-tight">Sign In</CardTitle>
+            <CardDescription className="text-zinc-500 text-sm mt-2">
+              Welcome back. Access your CRM workspace securely.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+
+          <CardContent className="px-0">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -87,20 +81,20 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="email" className="text-slate-200">Email Address</Label>
+                      <Label htmlFor="email" className="text-zinc-500 text-xs">Email or Username</Label>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                           <Input
                             id="email"
                             type="email"
-                            placeholder="admin@crm.com"
-                            className="pl-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500"
+                            placeholder="you@company.com"
+                            className="pl-10 h-12 rounded-full bg-zinc-50 border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-indigo-500"
                             {...field}
                           />
                         </div>
                       </FormControl>
-                      <FormMessage className="text-red-400" />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
@@ -110,68 +104,47 @@ export default function LoginPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="password" className="text-slate-200">Password</Label>
+                      <Label htmlFor="password" className="text-zinc-500 text-xs">Password</Label>
                       <FormControl>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                           <Input
                             id="password"
                             type="password"
                             placeholder="••••••••"
-                            className="pl-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500"
+                            className="pl-10 h-12 rounded-full bg-zinc-50 border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-indigo-500"
                             {...field}
                           />
                         </div>
                       </FormControl>
-                      <FormMessage className="text-red-400" />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
 
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold h-10 rounded-lg transition-all duration-200 mt-6 group"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="inline-block animate-spin mr-2">⚙️</span>
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign In
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </Button>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-slate-800 text-slate-400">Demo Credentials</span>
-                  </div>
-                </div>
-
-                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
-                  <p className="text-sm text-slate-300 mb-2">
-                    <span className="font-semibold text-slate-200">Email:</span> admin@crm.com
-                  </p>
-                  <p className="text-sm text-slate-300">
-                    <span className="font-semibold text-slate-200">Password:</span> Admin@123
-                  </p>
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    className="w-full h-12 rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 hover:from-indigo-600 hover:via-violet-600 hover:to-fuchsia-600 text-white font-semibold transition-all duration-200 group"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin mr-2" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        Sign In
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </Button>
                 </div>
               </form>
             </Form>
           </CardContent>
         </Card>
-
-        {/* Footer */}
-        <p className="text-center text-slate-400 text-sm mt-6">
-          © 2026 CRM System. All rights reserved.
-        </p>
       </div>
     </div>
   );

@@ -21,6 +21,8 @@ import {
   X,
   ChevronRight,
 } from 'lucide-react';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -259,6 +261,8 @@ export default function CustomersPage() {
     return list;
   }, [customers, typeFilter, search]);
 
+  const pagination = usePagination(filtered, 10);
+
   const handleCreate = () => {
     if (!formData.companyName || !formData.contactPerson) return;
     createMutation.mutate({ ...formData, customerType: (formData.customerType === 'Individual' ? 0 : 1) as any });
@@ -369,7 +373,7 @@ export default function CustomersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
+                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-900/40">
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-[28%]">Customer</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Contact Info</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Industry</th>
@@ -381,7 +385,7 @@ export default function CustomersPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.length > 0 ? (
-                  filtered.map(customer => {
+                  pagination.paginatedItems.map(customer => {
                     const isBusiness = customer.customerType === 1 || customer.customerType === 'Business';
                     const loc = [customer.billingCity, customer.billingState].filter(Boolean).join(', ');
                     return (
@@ -461,15 +465,21 @@ export default function CustomersPage() {
           </div>
 
           {filtered.length > 0 && (
-            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between">
-              <p className="text-xs text-gray-400">
-                Showing <span className="font-semibold text-gray-600">{filtered.length}</span> of{' '}
-                <span className="font-semibold text-gray-600">{stats.total}</span> customers
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between flex-col sm:flex-row gap-4">
+              <p className="text-sm text-gray-500">
+                Showing <span className="font-semibold">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-semibold">{Math.min(pagination.currentPage * pagination.itemsPerPage, filtered.length)}</span> of <span className="font-semibold">{filtered.length}</span> customers
               </p>
-              <div className="flex items-center gap-1 text-xs text-gray-400">
-                <Hash className="h-3 w-3" />
-                NexCRM · Customers
-              </div>
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                itemsPerPage={pagination.itemsPerPage}
+                totalItems={filtered.length}
+                onPageChange={pagination.goToPage}
+                onItemsPerPageChange={pagination.setItemsPerPage}
+                pageNumbers={pagination.pageNumbers}
+                hasNextPage={pagination.currentPage < pagination.totalPages}
+                hasPreviousPage={pagination.currentPage > 1}
+              />
             </div>
           )}
         </div>

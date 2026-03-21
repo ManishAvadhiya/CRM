@@ -4,6 +4,7 @@ import { authApi } from '@/services/authService';
 import { exportApi } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { User, Mail, Phone, LogOut, Lock, ShieldCheck, Download, Loader2 } from 'lucide-react';
+import { getCurrentTheme, setTheme } from '@/lib/theme';
 
 const inputCls = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition';
 
@@ -27,8 +28,12 @@ export function AccountDetailsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [exportingPreset, setExportingPreset] = useState<null | 'generic' | 'zoho' | 'hubspot' | 'salesforce'>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  useEffect(() => { loadProfile(); }, []);
+  useEffect(() => {
+    loadProfile();
+    setIsDarkMode(getCurrentTheme() === 'dark');
+  }, []);
 
   const loadProfile = async () => {
     try {
@@ -175,6 +180,35 @@ export function AccountDetailsPage() {
           ) : (
             <p className="text-sm text-gray-500">Keep your account secure by updating your password periodically.</p>
           )}
+        </div>
+
+        {/* Appearance card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Appearance</h2>
+          <p className="text-sm text-gray-500 mb-4">Use dark mode across your CRM workspace.</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              const nextMode = !isDarkMode;
+              setIsDarkMode(nextMode);
+              setTheme(nextMode ? 'dark' : 'light');
+            }}
+            className="w-full sm:w-auto inline-flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-semibold text-gray-800">Dark Mode</span>
+            <span
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                isDarkMode ? 'bg-indigo-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                  isDarkMode ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+            </span>
+          </button>
         </div>
 
         {/* CRM Export card for Partner */}

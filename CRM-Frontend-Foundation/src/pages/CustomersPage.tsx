@@ -206,6 +206,8 @@ export default function CustomersPage() {
     mutationFn: (d: Partial<Customer>) => customersApi.create(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setCreateOpen(false);
       setFormData(EMPTY_FORM);
     },
@@ -215,6 +217,8 @@ export default function CustomersPage() {
     mutationFn: (d: Partial<Customer>) => customersApi.update(editCustomer!.customerId, d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       setEditCustomer(null);
       setFormData(EMPTY_FORM);
     },
@@ -224,6 +228,8 @@ export default function CustomersPage() {
     mutationFn: (id: number) => customersApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       setDeleteTarget(null);
     },
   });
@@ -310,7 +316,7 @@ export default function CustomersPage() {
           </div>
           <button
             onClick={() => { setFormData(EMPTY_FORM); setCreateOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm transition"
+            className="btn-vibrant-primary flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl shadow-sm transition"
           >
             <Plus className="h-4 w-4" />
             Add Customer
@@ -430,10 +436,10 @@ export default function CustomersPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
-                            <button onClick={() => openEdit(customer)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-amber-50 hover:text-amber-600 transition" title="Edit">
+                            <button onClick={() => openEdit(customer)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 transition-colors font-bold" title="Edit">
                               <Edit className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => setDeleteTarget(customer)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition" title="Delete">
+                            <button onClick={() => setDeleteTarget(customer)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-300 transition-colors font-bold" title="Delete">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                             <ChevronRight className="h-3.5 w-3.5 text-gray-300 ml-1" />

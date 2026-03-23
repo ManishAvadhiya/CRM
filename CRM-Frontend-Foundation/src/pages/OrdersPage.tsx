@@ -317,7 +317,7 @@ export default function OrdersPage() {
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            className="btn-vibrant-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl shadow-sm"
           >
             <Plus className="w-4 h-4" />
             New Order
@@ -499,7 +499,7 @@ export default function OrdersPage() {
                           <button
                             onClick={() => handleConfirm(order)}
                             disabled={confirmMutation.isPending}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors font-bold"
                             title="Confirm Order"
                           >
                             <CheckCircle className="w-4 h-4" />
@@ -507,7 +507,7 @@ export default function OrdersPage() {
                         )}
                         <button
                           onClick={() => handleViewDetail(order)}
-                          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                          className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-300 transition-colors font-bold"
                           title="View Detail"
                         >
                           <Eye className="w-4 h-4" />

@@ -50,6 +50,9 @@ public class Lead : BaseEntity
     
     public DateTime? ConvertedDate { get; set; }
     
+    [ForeignKey("ConvertedByUser")]
+    public int? ConvertedBy { get; set; }
+    
     public string? LostReason { get; set; }
     
     [Column(TypeName = "json")]
@@ -61,6 +64,7 @@ public class Lead : BaseEntity
     // Navigation Properties
     public User? AssignedToUser { get; set; }
     public User? CreatedByUser { get; set; }
+    public User? ConvertedByUser { get; set; }
     public Customer? ConvertedCustomer { get; set; }
 }
 

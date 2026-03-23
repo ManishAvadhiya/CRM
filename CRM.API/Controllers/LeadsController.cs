@@ -281,6 +281,7 @@ public class LeadsController : ControllerBase
             lead.Status = LeadStatus.Converted;
             lead.ConvertedToCustomerId = customer.CustomerId;
             lead.ConvertedDate = DateTime.UtcNow;
+            lead.ConvertedBy = GetCurrentUserId();
             lead.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

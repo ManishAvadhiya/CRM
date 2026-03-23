@@ -209,22 +209,45 @@ export default function LeadsPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: Partial<Lead>) => leadsApi.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leads'] }); setIsCreateOpen(false); setFormData({}); },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['leads'] }); 
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setIsCreateOpen(false); 
+      setFormData({}); 
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Lead>) => leadsApi.update(selectedLead!.leadId, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leads'] }); setIsEditOpen(false); setSelectedLead(null); setFormData({}); },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setIsEditOpen(false); 
+      setSelectedLead(null); 
+      setFormData({}); 
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => leadsApi.delete(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leads'] }); setDeleteLead(null); setSelectedLead(null); },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setDeleteLead(null); 
+      setSelectedLead(null); 
+    },
   });
 
   const convertMutation = useMutation({
     mutationFn: (id: number) => leadsApi.convert(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['leads'] }); queryClient.invalidateQueries({ queryKey: ['customers'] }); setSelectedLead(null); },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['leads'] }); 
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      setSelectedLead(null); 
+    },
   });
 
   // Enum mappings
@@ -337,7 +360,7 @@ export default function LeadsPage() {
           </div>
           <button
             onClick={() => { setIsCreateOpen(true); setFormData({}); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+            className="btn-vibrant-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl shadow-sm"
           >
             <Plus className="w-4 h-4" /> Create Lead
           </button>
@@ -443,21 +466,21 @@ export default function LeadsPage() {
                       )}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => navigate(`/dashboard/leads/${lead.leadId}`)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors" title="View">
+                          <button onClick={() => navigate(`/dashboard/leads/${lead.leadId}`)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-300 transition-colors font-bold" title="View">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleEdit(lead)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors" title="Edit">
+                          <button onClick={() => handleEdit(lead)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 transition-colors font-bold" title="Edit">
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => { if (confirm('Convert this lead to a customer?')) convertMutation.mutate(lead.leadId); }}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${isConverted ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800/30 dark:text-gray-600' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50'}`}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors font-bold ${isConverted ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700/40 dark:text-gray-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'}`}
                             title={isConverted ? "Already converted" : "Convert to Customer"}
                             disabled={isConverted || convertMutation.isPending}
                           >
                             <UserPlus className="w-4 h-4" />
                           </button>
-                          <button onClick={() => setDeleteLead(lead)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors" title="Delete">
+                          <button onClick={() => setDeleteLead(lead)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-300 transition-colors font-bold" title="Delete">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

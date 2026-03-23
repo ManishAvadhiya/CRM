@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { LeadHistoryTimeline } from '@/components/ui/LeadHistoryTimeline';
 import { leadsService } from '@/services/leadsService';
 import { customersApi } from '@/services';
@@ -26,6 +27,7 @@ export function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [lead, setLead] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,6 +147,12 @@ export function LeadDetailPage() {
       };
       await customersApi.create(customerData);
       await leadsService.updateStatus(parseInt(id), { status: 'Converted' });
+      
+      // Invalidate queries for real-time updates
+      await queryClient.invalidateQueries({ queryKey: ['leads'] });
+      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      
       setShowConvertForm(false);
       setSuccess('Lead converted to customer successfully');
       await loadLeadDetails();
@@ -161,7 +169,9 @@ export function LeadDetailPage() {
   };
 
   const canEdit = user?.role === 'ManagementAdmin' || lead?.createdBy === user?.userId;
-  const canConvert = canEdit && lead?.status !== 'Converted' && lead?.status !== 'Lost';
+  const canAddNote = canEdit && user?.role !== 'Marketing';
+  const canChangeStatus = canEdit && user?.role !== 'Marketing';
+  const canConvert = lead?.status !== 'Converted' && lead?.status !== 'Lost';
 
   if (isLoading) {
     return (
@@ -264,26 +274,42 @@ export function LeadDetailPage() {
               )}
 
               {/* Actions */}
-              {canEdit && (
+              {(canEdit || canConvert) && (
                 <div className="mt-5 pt-5 border-t border-gray-50 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => { setShowAddNote(true); setShowStatusChange(false); setShowConvertForm(false); }}
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    Add Note
-                  </button>
-                  <button
-                    onClick={() => { setShowStatusChange(true); setShowAddNote(false); setShowConvertForm(false); }}
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-xl transition-colors"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    Change Status
-                  </button>
+                  {canAddNote && (
+                    <button
+                      onClick={() => { setShowAddNote(true); setShowStatusChange(false); setShowConvertForm(false); }}
+                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 rounded-xl transition-all shadow-sm"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Add Note
+                    </button>
+                  )}
+                  {canChangeStatus && (
+                    <button
+                      onClick={() => { setShowStatusChange(true); setShowAddNote(false); setShowConvertForm(false); }}
+                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 rounded-xl transition-all shadow-sm"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Change Status
+                    </button>
+                  )}
+                  {user?.role === 'Marketing' && !canAddNote && (
+                    <div title="Marketing users cannot add notes" className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 cursor-not-allowed rounded-xl opacity-50">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Add Note
+                    </div>
+                  )}
+                  {user?.role === 'Marketing' && !canChangeStatus && (
+                    <div title="Marketing users cannot change status" className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 cursor-not-allowed rounded-xl opacity-50">
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Change Status
+                    </div>
+                  )}
                   {canConvert && (
                     <button
                       onClick={() => { setShowConvertForm(true); setShowAddNote(false); setShowStatusChange(false); }}
-                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
+                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 rounded-xl transition-all shadow-sm"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
                       Convert to Customer
@@ -294,7 +320,7 @@ export function LeadDetailPage() {
             </div>
 
             {/* Add Note Panel */}
-            {showAddNote && canEdit && (
+            {showAddNote && canAddNote && (
               <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
@@ -332,7 +358,7 @@ export function LeadDetailPage() {
             )}
 
             {/* Status Change Panel */}
-            {showStatusChange && canEdit && (
+            {showStatusChange && canChangeStatus && (
               <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">

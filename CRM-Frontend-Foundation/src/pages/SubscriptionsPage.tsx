@@ -204,7 +204,7 @@ export default function SubscriptionsPage() {
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <button
                           onClick={() => setSelectedSub(sub)}
-                          className="px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+                          className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 rounded-lg shadow-sm transition-all"
                         >
                           View
                         </button>

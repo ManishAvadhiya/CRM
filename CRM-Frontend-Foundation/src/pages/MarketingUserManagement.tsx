@@ -20,15 +20,17 @@ function SlidePanel({ open, onClose, title, children }: { open: boolean; onClose
   if (!open) return null;
   return (
     <>
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <X className="w-4 h-4" />
           </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">{children}</div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </>
   );
@@ -217,13 +219,13 @@ export const MarketingUserManagement = () => {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleStartEdit(partner)} className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors" title="Edit">
+                          <button onClick={() => handleStartEdit(partner)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors font-bold" title="Edit">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDisableToggle(partner.userId, partner.isActive)} className={`p-1.5 rounded-lg transition-colors ${partner.isActive ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`} title={partner.isActive ? 'Disable' : 'Enable'}>
+                          <button onClick={() => handleDisableToggle(partner.userId, partner.isActive)} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors font-bold ${partner.isActive ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`} title={partner.isActive ? 'Disable' : 'Enable'}>
                             {partner.isActive ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                           </button>
-                          <button onClick={() => handleDeleteConfirm(partner.userId)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                          <button onClick={() => handleDeleteConfirm(partner.userId)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors font-bold" title="Delete">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

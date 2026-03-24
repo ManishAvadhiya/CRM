@@ -122,14 +122,21 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<Lead>()
             .HasOne(l => l.AssignedToUser)
-            .WithMany()
+            .WithMany(u => u.AssignedLeads)
             .HasForeignKey(l => l.AssignedTo)
             .OnDelete(DeleteBehavior.SetNull);
         modelBuilder.Entity<Lead>()
             .HasOne(l => l.CreatedByUser)
-            .WithMany()
+            .WithMany(u => u.CreatedLeads)
             .HasForeignKey(l => l.CreatedBy)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Lead>()
+            .HasOne(l => l.ConvertedByUser)
+            .WithMany()
+            .HasForeignKey(l => l.ConvertedBy)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Customer → User relationships
         modelBuilder.Entity<Customer>()
             .HasOne(c => c.AccountOwnerUser)

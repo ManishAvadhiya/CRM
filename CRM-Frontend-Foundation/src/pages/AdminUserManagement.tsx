@@ -27,9 +27,10 @@ function SlidePanel({ open, onClose, title, subtitle, children }: { open: boolea
   if (!open) return null;
   return (
     <>
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
             <h2 className="text-base font-bold text-gray-900">{title}</h2>
             {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
@@ -37,8 +38,9 @@ function SlidePanel({ open, onClose, title, subtitle, children }: { open: boolea
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">{children}</div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </>
   );
@@ -297,13 +299,13 @@ export default function AdminUserManagement() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => startEdit(user)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title="Edit">
+                      <button onClick={() => startEdit(user)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors font-bold" title="Edit">
                         <Edit className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => user.isActive ? disableMutation.mutate(user.userId) : enableMutation.mutate(user.userId)} className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${user.isActive ? 'hover:bg-orange-50 text-gray-400 hover:text-orange-600' : 'hover:bg-emerald-50 text-gray-400 hover:text-emerald-600'}`} title={user.isActive ? 'Disable' : 'Enable'}>
+                      <button onClick={() => user.isActive ? disableMutation.mutate(user.userId) : enableMutation.mutate(user.userId)} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors font-bold ${user.isActive ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`} title={user.isActive ? 'Disable' : 'Enable'}>
                         {user.isActive ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                       </button>
-                      <button onClick={() => setDeleteUser(user)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Delete">
+                      <button onClick={() => setDeleteUser(user)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors font-bold" title="Delete">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>

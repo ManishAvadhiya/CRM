@@ -72,32 +72,29 @@ interface PanelProps {
 }
 
 function SlidePanel({ open, onClose, title, subtitle, children }: PanelProps) {
+  if (!open) return null;
   return (
     <>
       <div
         onClick={onClose}
-        className={`fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40 transition-opacity duration-300 ${
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
       />
-      <div
-        className={`fixed right-0 top-0 h-full w-full max-w-[520px] bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-            {subtitle && <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              {subtitle && <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>}
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
       </div>
     </>
   );
@@ -304,126 +301,12 @@ export default function ActivityPage() {
           <p className="text-sm text-gray-400 mt-0.5">Track all calls, emails, and meetings with your leads and customers</p>
         </div>
         <button
-          onClick={() => setShowCreateForm((prev) => !prev)}
+          onClick={() => setShowCreateForm(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition flex items-center gap-2"
         >
           <Plus className="w-4 h-4" /> Create Activity
         </button>
       </div>
-
-      {showCreateForm && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Create Activity</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name Source</label>
-              <select
-                value={createForm.relatedToType}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    relatedToType: e.target.value,
-                    relatedToId: '',
-                  }))
-                }
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              >
-                <option value="Lead">Lead</option>
-                <option value="Customer">Customer</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
-              <select
-                value={createForm.relatedToId}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, relatedToId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              >
-                <option value="">Select Name</option>
-                {relatedEntityOptions.map((entity) => (
-                  <option key={entity.id} value={entity.id}>
-                    {entity.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
-              <select
-                value={createForm.activityType}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, activityType: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              >
-                <option value="Call">Call</option>
-                <option value="Email">Email</option>
-                <option value="Meeting">Meeting</option>
-                <option value="Task">Task</option>
-                <option value="Note">Note</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
-              <input
-                type="datetime-local"
-                value={createForm.activityDate}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, activityDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Next Follow-up</label>
-              <input
-                type="datetime-local"
-                value={createForm.nextFollowUp}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, nextFollowUp: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Outcome</label>
-              <input
-                type="text"
-                value={createForm.outcome}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, outcome: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                placeholder="Interested / Callback required / Closed"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
-              <textarea
-                value={createForm.description}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-                rows={3}
-                placeholder="Write activity notes"
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              onClick={handleCreateActivity}
-              disabled={createMutation.isPending}
-              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
-            >
-              {createMutation.isPending ? 'Saving...' : 'Save Activity'}
-            </button>
-            <button
-              onClick={() => setShowCreateForm(false)}
-              className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ACTIVITY TYPE FILTER CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
@@ -530,21 +413,21 @@ export default function ActivityPage() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => setSelectedActivity(activity)}
-                            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors font-bold"
                             title="View details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             disabled
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-100 text-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Edit activity"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeleteActivity(activity)}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition"
+                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors font-bold"
                             title="Delete activity"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -568,6 +451,121 @@ export default function ActivityPage() {
         onCancel={() => setDeleteActivity(null)}
         isLoading={deleteMutation.isPending}
       />
+
+      <SlidePanel
+        open={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        title="Create Activity"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name Source</label>
+            <select
+              value={createForm.relatedToType}
+              onChange={(e) =>
+                setCreateForm((prev) => ({
+                  ...prev,
+                  relatedToType: e.target.value,
+                  relatedToId: '',
+                }))
+              }
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="Lead">Lead</option>
+              <option value="Customer">Customer</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
+            <select
+              value={createForm.relatedToId}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, relatedToId: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="">Select Name</option>
+              {relatedEntityOptions.map((entity) => (
+                <option key={entity.id} value={entity.id}>
+                  {entity.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+            <select
+              value={createForm.activityType}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, activityType: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="Call">Call</option>
+              <option value="Email">Email</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Task">Task</option>
+              <option value="Note">Note</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
+            <input
+              type="datetime-local"
+              value={createForm.activityDate}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, activityDate: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Next Follow-up</label>
+            <input
+              type="datetime-local"
+              value={createForm.nextFollowUp}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, nextFollowUp: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Outcome</label>
+            <input
+              type="text"
+              value={createForm.outcome}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, outcome: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              placeholder="Interested / Callback required / Closed"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
+            <textarea
+              value={createForm.description}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              rows={3}
+              placeholder="Write activity notes"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={handleCreateActivity}
+            disabled={createMutation.isPending}
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {createMutation.isPending ? 'Saving...' : 'Save Activity'}
+          </button>
+          <button
+            onClick={() => setShowCreateForm(false)}
+            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200"
+          >
+            Cancel
+          </button>
+        </div>
+      </SlidePanel>
 
       {/* DETAIL PANEL */}
       <SlidePanel

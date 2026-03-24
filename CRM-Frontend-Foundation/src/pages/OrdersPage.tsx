@@ -45,9 +45,10 @@ function SlidePanel({
   if (!open) return null;
   return (
     <>
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
@@ -55,8 +56,9 @@ function SlidePanel({
           >
             <X className="w-4 h-4" />
           </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">{children}</div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </>
   );
@@ -499,7 +501,7 @@ export default function OrdersPage() {
                           <button
                             onClick={() => handleConfirm(order)}
                             disabled={confirmMutation.isPending}
-                            className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors font-bold"
+                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors font-bold"
                             title="Confirm Order"
                           >
                             <CheckCircle className="w-4 h-4" />
@@ -507,7 +509,7 @@ export default function OrdersPage() {
                         )}
                         <button
                           onClick={() => handleViewDetail(order)}
-                          className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-300 transition-colors font-bold"
+                          className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-300 transition-colors font-bold"
                           title="View Detail"
                         >
                           <Eye className="w-4 h-4" />

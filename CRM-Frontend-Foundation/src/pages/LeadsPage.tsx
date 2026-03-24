@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadsApi } from '@/services/leadsService';
+import { customersApi } from '@/services';
 import { formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import type { Lead } from '@/types';
@@ -30,9 +31,10 @@ function SlidePanel({ open, onClose, title, subtitle, children }: { open: boolea
   if (!open) return null;
   return (
     <>
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div>
             <h2 className="text-base font-bold text-gray-900">{title}</h2>
             {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
@@ -40,10 +42,123 @@ function SlidePanel({ open, onClose, title, subtitle, children }: { open: boolea
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">{children}</div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </>
+  );
+}
+
+function ConvertLeadModal({
+  open,
+  lead,
+  formData,
+  onChange,
+  onClose,
+  onConfirm,
+  isPending,
+}: {
+  open: boolean;
+  lead: Lead | null;
+  formData: Record<string, string>;
+  onChange: (patch: Record<string, string>) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+  isPending: boolean;
+}) {
+  if (!open || !lead) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl max-h-[88vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <div>
+            <h3 className="text-base font-bold text-gray-900">Convert Lead to Customer</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Fill details and confirm conversion for {lead.companyName}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="space-y-3">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Basic Information</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Company Name" required>
+                <input
+                  type="text"
+                  value={formData.companyName || ''}
+                  onChange={e => onChange({ companyName: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Contact Person" required>
+                <input
+                  type="text"
+                  value={formData.contactPerson || ''}
+                  onChange={e => onChange({ contactPerson: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Email">
+                <input
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={e => onChange({ email: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Phone">
+                <input
+                  type="text"
+                  value={formData.phone || ''}
+                  onChange={e => onChange({ phone: e.target.value })}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Billing Address</p>
+            <Field label="Address">
+              <textarea
+                value={formData.billingAddress || ''}
+                onChange={e => onChange({ billingAddress: e.target.value })}
+                className={inputCls}
+                rows={2}
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="City">
+                <input type="text" value={formData.billingCity || ''} onChange={e => onChange({ billingCity: e.target.value })} className={inputCls} />
+              </Field>
+              <Field label="State">
+                <input type="text" value={formData.billingState || ''} onChange={e => onChange({ billingState: e.target.value })} className={inputCls} />
+              </Field>
+              <Field label="Postal Code">
+                <input type="text" value={formData.billingPostalCode || ''} onChange={e => onChange({ billingPostalCode: e.target.value })} className={inputCls} />
+              </Field>
+              <Field label="GST Number">
+                <input type="text" value={formData.gstNumber || ''} onChange={e => onChange({ gstNumber: e.target.value })} className={inputCls} />
+              </Field>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-100 p-4 flex items-center justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={isPending} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+            {isPending ? 'Converting...' : 'Confirm Conversion'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -197,9 +312,11 @@ export default function LeadsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteLead, setDeleteLead] = useState<Lead | null>(null);
+  const [convertLead, setConvertLead] = useState<Lead | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<Partial<Lead>>({});
+  const [convertFormData, setConvertFormData] = useState<Record<string, string>>({});
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ['leads'],
@@ -239,14 +356,19 @@ export default function LeadsPage() {
   });
 
   const convertMutation = useMutation({
-    mutationFn: (id: number) => leadsApi.convert(id),
+    mutationFn: async ({ leadId, customerData }: { leadId: number; customerData: any }) => {
+      await customersApi.create(customerData);
+      await leadsApi.updateStatus(leadId, { status: 'Converted' });
+    },
     onSuccess: () => { 
       queryClient.invalidateQueries({ queryKey: ['leads'] }); 
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-      setSelectedLead(null); 
+      setSelectedLead(null);
+      setConvertLead(null);
+      setConvertFormData({});
     },
   });
 
@@ -322,6 +444,66 @@ export default function LeadsPage() {
     setIsEditOpen(true);
   };
 
+  const openConvertModal = (lead: Lead) => {
+    setConvertLead(lead);
+    setConvertFormData({
+      companyName: lead.companyName || '',
+      contactPerson: lead.contactName || '',
+      email: lead.email || '',
+      phone: lead.phone || '',
+      website: lead.website || '',
+      industry: lead.industry || '',
+      customerType: 'Business',
+      billingAddress: '',
+      billingCity: '',
+      billingState: '',
+      billingCountry: 'India',
+      billingPostalCode: '',
+      shippingAddress: '',
+      shippingCity: '',
+      shippingState: '',
+      shippingCountry: 'India',
+      shippingPostalCode: '',
+      gstNumber: '',
+      panNumber: '',
+      alternatePhone: '',
+    });
+  };
+
+  const handleConfirmConvert = () => {
+    if (!convertLead) return;
+    if (!convertFormData.companyName?.trim() || !convertFormData.contactPerson?.trim()) {
+      alert('Company Name and Contact Person are required');
+      return;
+    }
+
+    const customerData = {
+      leadId: convertLead.leadId,
+      companyName: convertFormData.companyName.trim(),
+      contactPerson: convertFormData.contactPerson.trim(),
+      email: convertFormData.email?.trim() || undefined,
+      phone: convertFormData.phone?.trim() || undefined,
+      website: convertFormData.website?.trim() || undefined,
+      industry: convertFormData.industry?.trim() || undefined,
+      alternatePhone: convertFormData.alternatePhone?.trim() || undefined,
+      customerType: convertFormData.customerType === 'Individual' ? 0 : 1,
+      billingAddress: convertFormData.billingAddress?.trim() || undefined,
+      billingCity: convertFormData.billingCity?.trim() || undefined,
+      billingState: convertFormData.billingState?.trim() || undefined,
+      billingCountry: convertFormData.billingCountry?.trim() || 'India',
+      billingPostalCode: convertFormData.billingPostalCode?.trim() || undefined,
+      shippingAddress: convertFormData.shippingAddress?.trim() || undefined,
+      shippingCity: convertFormData.shippingCity?.trim() || undefined,
+      shippingState: convertFormData.shippingState?.trim() || undefined,
+      shippingCountry: convertFormData.shippingCountry?.trim() || 'India',
+      shippingPostalCode: convertFormData.shippingPostalCode?.trim() || undefined,
+      gstNumber: convertFormData.gstNumber?.trim() || undefined,
+      panNumber: convertFormData.panNumber?.trim() || undefined,
+    };
+
+    convertMutation.mutate({ leadId: convertLead.leadId, customerData });
+  };
+
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
     let filtered = leads;
@@ -349,6 +531,15 @@ export default function LeadsPage() {
       <SlidePanel open={isEditOpen} onClose={() => { setIsEditOpen(false); setSelectedLead(null); setFormData({}); }} title="Edit Lead" subtitle={selectedLead?.companyName}>
         <LeadForm data={formData} onChange={setFormData} onSubmit={handleUpdate} isPending={updateMutation.isPending} mode="edit" />
       </SlidePanel>
+      <ConvertLeadModal
+        open={!!convertLead}
+        lead={convertLead}
+        formData={convertFormData}
+        onChange={(patch) => setConvertFormData(prev => ({ ...prev, ...patch }))}
+        onClose={() => { setConvertLead(null); setConvertFormData({}); }}
+        onConfirm={handleConfirmConvert}
+        isPending={convertMutation.isPending}
+      />
 
       <div className="space-y-6">
 
@@ -473,7 +664,7 @@ export default function LeadsPage() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => { if (confirm('Convert this lead to a customer?')) convertMutation.mutate(lead.leadId); }}
+                            onClick={() => openConvertModal(lead)}
                             className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors font-bold ${isConverted ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700/40 dark:text-gray-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'}`}
                             title={isConverted ? "Already converted" : "Convert to Customer"}
                             disabled={isConverted || convertMutation.isPending}

@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductVariant> ProductVariants { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<Subscription> Subscriptions { get; set; }
+    public DbSet<SubscriptionHistory> SubscriptionHistories { get; set; }
     public DbSet<Activity> Activities { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<PasswordReset> PasswordResets { get; set; }
@@ -47,8 +48,11 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Order>().Property(o => o.Status).HasConversion<string>();
         modelBuilder.Entity<Order>().Property(o => o.PaymentStatus).HasConversion<string>();
         modelBuilder.Entity<Order>().Property(o => o.UserLicenseType).HasConversion<string>();
+        modelBuilder.Entity<Order>().Property(o => o.OrderType).HasConversion<string>();
 
         modelBuilder.Entity<Subscription>().Property(s => s.Status).HasConversion<string>();
+
+        modelBuilder.Entity<SubscriptionHistory>().Property(sh => sh.ChangeType).HasConversion<string>();
 
         modelBuilder.Entity<Activity>().Property(a => a.ActivityType).HasConversion<string>();
         modelBuilder.Entity<Activity>().Property(a => a.RelatedToType).HasConversion<string>();
@@ -101,6 +105,32 @@ public class ApplicationDbContext : DbContext
             .WithOne(o => o.Subscription)
             .HasForeignKey<Subscription>(s => s.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Relationship: Order → RenewedSubscription (for renewal orders)
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.RenewedSubscription)
+            .WithMany()
+            .HasForeignKey(o => o.RenewedSubscriptionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Relationship: SubscriptionHistory → Subscription
+        modelBuilder.Entity<SubscriptionHistory>()
+            .HasOne(sh => sh.Subscription)
+            .WithMany(s => s.History)
+            .HasForeignKey(sh => sh.SubscriptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SubscriptionHistory>()
+            .HasOne(sh => sh.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(sh => sh.ChangedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SubscriptionHistory>()
+            .HasOne(sh => sh.RelatedOrder)
+            .WithMany()
+            .HasForeignKey(sh => sh.RelatedOrderId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Activity → User relationships
         modelBuilder.Entity<Activity>()

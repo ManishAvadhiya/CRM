@@ -45,12 +45,20 @@ public class Subscription : BaseEntity
     public bool AutoRenew { get; set; } = true;
     
     public DateTime? CancellationDate { get; set; }
-    
+
     public string? CancellationReason { get; set; }
-    
+
     [ForeignKey("CancelledByUser")]
     public int? CancelledBy { get; set; }
-    
+
+    // Suspension fields
+    public DateTime? SuspensionDate { get; set; }
+
+    public string? SuspensionReason { get; set; }
+
+    [ForeignKey("SuspendedByUser")]
+    public int? SuspendedBy { get; set; }
+
     public int RenewalCount { get; set; } = 0;
     
     public DateTime? LastPaymentDate { get; set; }
@@ -68,7 +76,9 @@ public class Subscription : BaseEntity
     public Order Order { get; set; } = null!;
     public ProductVariant ProductVariant { get; set; } = null!;
     public User? CancelledByUser { get; set; }
+    public User? SuspendedByUser { get; set; }
     public User? CreatedByUser { get; set; }
+    public ICollection<SubscriptionHistory> History { get; set; } = new List<SubscriptionHistory>();
 }
 
 public enum SubscriptionStatus

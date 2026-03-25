@@ -186,8 +186,8 @@ export default function Sidebar() {
                 'flex items-center rounded-xl transition-all duration-150 relative',
                 collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-50 dark:hover:bg-[#131b2d]'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 cursor-default hover:bg-indigo-600 hover:text-white'
+                  : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-[#131b2d]'
               );
 
             const inner = (isActive: boolean) => (
@@ -230,65 +230,25 @@ export default function Sidebar() {
       {/* Divider */}
       <div className="mx-3 h-px bg-gray-100 dark:bg-slate-900" />
 
-      {/* Footer — User + Logout */}
-      <div className={cn('shrink-0 py-3 space-y-0.5', collapsed ? 'px-2' : 'px-3')}>
+      {/* Footer — Logout */}
+      <div className={cn('shrink-0 py-3', collapsed ? 'px-2' : 'px-3')}>
         {collapsed ? (
-          <>
-            <Tooltip label={user?.name || 'Account'}>
-              <button
-                onClick={() => navigate('/dashboard/account')}
-                className={cn(
-                  'w-full flex justify-center p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-[#131b2d] transition-colors'
-                )}
-              >
-                <div
-                  className={cn(
-                    'w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0',
-                    avatarColor(user?.name || 'U')
-                  )}
-                >
-                  {initials}
-                </div>
-              </button>
-            </Tooltip>
-            <Tooltip label="Sign Out">
-              <button
-                onClick={handleLogout}
-                className="w-full flex justify-center p-2.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-              >
-                <LogOut className="w-[18px] h-[18px]" />
-              </button>
-            </Tooltip>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => navigate('/dashboard/account')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-[#131b2d] transition-colors text-left"
-            >
-              <div
-                className={cn(
-                  'w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0',
-                  avatarColor(user?.name || 'U')
-                )}
-              >
-                {initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-gray-900 truncate leading-tight">
-                  {user?.name || 'User'}
-                </p>
-                <p className="text-[11px] text-gray-400 truncate">{user?.role}</p>
-              </div>
-            </button>
+          <Tooltip label="Sign Out">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              className="w-full flex justify-center p-2.5 rounded-xl text-gray-600 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
             >
-              <LogOut className="w-[18px] h-[18px] shrink-0" />
-              <span className="text-[13px] font-medium">Sign Out</span>
+              <LogOut className="w-[18px] h-[18px]" />
             </button>
-          </>
+          </Tooltip>
+        ) : (
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+          >
+            <LogOut className="w-[18px] h-[18px] shrink-0" />
+            <span className="text-[13px] font-medium">Sign Out</span>
+          </button>
         )}
       </div>
 

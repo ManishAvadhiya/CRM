@@ -19,6 +19,13 @@ public class Order : BaseEntity
     [ForeignKey("ProductVariant")]
     public int VariantId { get; set; }
     
+    // Order Type (New or Renewal)
+    public OrderType OrderType { get; set; } = OrderType.New;
+
+    // For renewal orders, link to the subscription being renewed
+    [ForeignKey("RenewedSubscription")]
+    public int? RenewedSubscriptionId { get; set; }
+
     // User Type Selection
     public UserLicenseType UserLicenseType { get; set; } = UserLicenseType.SingleUser;
     
@@ -80,6 +87,7 @@ public class Order : BaseEntity
     public ProductVariant? ProductVariant { get; set; }
     public User? CreatedByUser { get; set; }
     public Subscription? Subscription { get; set; }
+    public Subscription? RenewedSubscription { get; set; }
 }
 
 public enum UserLicenseType
@@ -102,4 +110,10 @@ public enum PaymentStatus
     Pending,
     Partial,
     Paid
+}
+
+public enum OrderType
+{
+    New,
+    Renew
 }

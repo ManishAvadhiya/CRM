@@ -153,6 +153,46 @@ public class OrdersController : ControllerBase
             var currentUserId = GetCurrentUserId();
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
+            // Validate renewal order
+            if (order.OrderType == OrderType.Renew)
+            {
+                if (!order.RenewedSubscriptionId.HasValue)
+                {
+                    return BadRequest(ApiResponse<Order>.ErrorResponse("Renewed subscription ID is required for renewal orders"));
+                }
+
+                var subscription = await _context.Subscriptions
+                    .Include(s => s.Order)
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == order.RenewedSubscriptionId.Value);
+
+                if (subscription == null)
+                {
+                    return BadRequest(ApiResponse<Order>.ErrorResponse("Invalid subscription for renewal"));
+                }
+
+                if (subscription.Status != SubscriptionStatus.Active && subscription.Status != SubscriptionStatus.Expired)
+                {
+                    return BadRequest(ApiResponse<Order>.ErrorResponse("Only active or expired subscriptions can be renewed"));
+                }
+
+                if (userRole == "Partner" && subscription.Order.CreatedBy != currentUserId)
+                {
+                    return Forbid();
+                }
+
+                // Use subscription's customer if not provided
+                if (order.CustomerId == 0)
+                {
+                    order.CustomerId = subscription.CustomerId;
+                }
+
+                // Use subscription's variant if not provided (can be upgraded)
+                if (order.VariantId == 0)
+                {
+                    order.VariantId = subscription.VariantId;
+                }
+            }
+
             // Get product variant to fetch pricing
             var variant = await _context.ProductVariants.FindAsync(order.VariantId);
             if (variant == null)
@@ -166,14 +206,14 @@ public class OrdersController : ControllerBase
                 return BadRequest(ApiResponse<Order>.ErrorResponse("Invalid customer"));
             }
 
-            if (userRole == "Partner" && customer.CreatedBy != currentUserId)
+            if (userRole == "Partner" && customer.CreatedBy != currentUserId && order.OrderType != OrderType.Renew)
             {
                 return Forbid();
             }
 
             // Calculate amounts based on user license type
-            order.BasePrice = order.UserLicenseType == UserLicenseType.SingleUser 
-                ? variant.BasePriceSingleUser 
+            order.BasePrice = order.UserLicenseType == UserLicenseType.SingleUser
+                ? variant.BasePriceSingleUser
                 : variant.BasePriceMultiUser;
 
             order.BaseAmount = order.BasePrice * order.Quantity;
@@ -200,20 +240,25 @@ public class OrdersController : ControllerBase
 
             if (customer?.AccountOwner != null)
             {
+                var notificationTitle = order.OrderType == OrderType.Renew ? "Renewal Order Created" : "New Order Created";
+                var notificationMessage = order.OrderType == OrderType.Renew
+                    ? $"Renewal order {order.OrderNumber} has been created for {customer.CompanyName}"
+                    : $"Order {order.OrderNumber} has been created for {customer.CompanyName}";
+
                 await _notificationService.CreateNotificationAsync(
                     customer.AccountOwner.Value,
                     NotificationType.OrderCreated,
-                    "New Order Created",
-                    $"Order {order.OrderNumber} has been created for {customer.CompanyName}",
+                    notificationTitle,
+                    notificationMessage,
                     RelatedToType.Order,
                     order.OrderId,
                     sendEmail: true
                 );
             }
 
-            _logger.LogInformation($"Order created: {order.OrderId}");
+            _logger.LogInformation($"Order created: {order.OrderId}, Type: {order.OrderType}");
 
-            return CreatedAtAction(nameof(GetById), new { id = order.OrderId }, 
+            return CreatedAtAction(nameof(GetById), new { id = order.OrderId },
                 ApiResponse<Order>.SuccessResponse(order, "Order created successfully"));
         }
         catch (Exception ex)
@@ -235,6 +280,7 @@ public class OrdersController : ControllerBase
                 .Include(o => o.ProductVariant)
                 .Include(o => o.Customer)
                     .ThenInclude(c => c.AccountOwnerUser)
+                .Include(o => o.RenewedSubscription)
                 .FirstOrDefaultAsync(o => o.OrderId == id);
 
             if (order == null)
@@ -254,60 +300,162 @@ public class OrdersController : ControllerBase
 
             // Update order status
             order.Status = OrderStatus.Confirmed;
+            order.PaymentStatus = PaymentStatus.Paid;
             order.UpdatedAt = DateTime.UtcNow;
 
-            // Create subscription automatically
-            var subscriptionCount = await _context.Subscriptions.CountAsync();
-            var startDate = DateTime.UtcNow.Date;
-            var renewalDate = startDate.AddYears(1);
+            Subscription subscription;
 
-            var subscription = new Subscription
+            if (order.OrderType == OrderType.Renew && order.RenewedSubscription != null)
             {
-                SubscriptionNumber = $"SUB-{DateTime.UtcNow.Year}-{(subscriptionCount + 1):D4}",
-                CustomerId = order.CustomerId,
-                OrderId = order.OrderId,
-                VariantId = order.VariantId,
-                StartDate = startDate,
-                CurrentPeriodStart = startDate,
-                CurrentPeriodEnd = renewalDate.AddDays(-1),
-                RenewalDate = renewalDate,
-                AnnualFee = order.ProductVariant.AnnualSubscriptionFee,
-                Status = SubscriptionStatus.Active,
-                AutoRenew = true,
-                CreatedBy = currentUserId,
-                CreatedAt = DateTime.UtcNow
-            };
+                // RENEWAL: Update existing subscription
+                subscription = order.RenewedSubscription;
+                var oldPeriodEnd = subscription.CurrentPeriodEnd;
+                var oldVariantId = subscription.VariantId;
 
-            _context.Subscriptions.Add(subscription);
-            await _context.SaveChangesAsync();
+                subscription.RenewalCount++;
+                subscription.CurrentPeriodStart = DateTime.UtcNow.Date;
+                subscription.CurrentPeriodEnd = DateTime.UtcNow.Date.AddYears(1).AddDays(-1);
+                subscription.RenewalDate = DateTime.UtcNow.Date.AddYears(1);
+                subscription.Status = SubscriptionStatus.Active;
+                subscription.AnnualFee = order.ProductVariant.AnnualSubscriptionFee;
+                subscription.VariantId = order.VariantId; // In case of upgrade
+                subscription.LastPaymentDate = DateTime.UtcNow;
+                subscription.UpdatedAt = DateTime.UtcNow;
 
-            // Send notifications
-            if (order.Customer.AccountOwner != null)
+                // Clear any suspension/cancellation data
+                subscription.SuspensionDate = null;
+                subscription.SuspensionReason = null;
+                subscription.SuspendedBy = null;
+                subscription.CancellationDate = null;
+                subscription.CancellationReason = null;
+                subscription.CancelledBy = null;
+
+                // Create renewal history entry
+                var description = $"Renewed via order {order.OrderNumber}";
+                if (oldVariantId != order.VariantId)
+                {
+                    var oldVariant = await _context.ProductVariants.FindAsync(oldVariantId);
+                    description += $" (upgraded from {oldVariant?.VariantName ?? "Unknown"} to {order.ProductVariant.VariantName})";
+                }
+
+                var history = new SubscriptionHistory
+                {
+                    SubscriptionId = subscription.SubscriptionId,
+                    ChangedByUserId = currentUserId,
+                    ChangeType = SubscriptionChangeType.Renewed,
+                    OldValue = oldPeriodEnd.ToString("yyyy-MM-dd"),
+                    NewValue = subscription.CurrentPeriodEnd.ToString("yyyy-MM-dd"),
+                    Description = description,
+                    RelatedOrderId = order.OrderId,
+                    ChangedAt = DateTime.UtcNow
+                };
+                _context.SubscriptionHistories.Add(history);
+
+                // If variant changed, add another history entry
+                if (oldVariantId != order.VariantId)
+                {
+                    var oldVariant = await _context.ProductVariants.FindAsync(oldVariantId);
+                    var variantHistory = new SubscriptionHistory
+                    {
+                        SubscriptionId = subscription.SubscriptionId,
+                        ChangedByUserId = currentUserId,
+                        ChangeType = SubscriptionChangeType.VariantChanged,
+                        OldValue = oldVariant?.VariantName ?? "Unknown",
+                        NewValue = order.ProductVariant.VariantName,
+                        Description = $"Product upgraded during renewal",
+                        RelatedOrderId = order.OrderId,
+                        ChangedAt = DateTime.UtcNow
+                    };
+                    _context.SubscriptionHistories.Add(variantHistory);
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Send renewal notification
+                if (order.Customer.AccountOwner != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        order.Customer.AccountOwner.Value,
+                        NotificationType.SubscriptionRenewed,
+                        "Subscription Renewed",
+                        $"Subscription {subscription.SubscriptionNumber} for {order.Customer.CompanyName} has been renewed until {subscription.CurrentPeriodEnd:yyyy-MM-dd}",
+                        RelatedToType.Subscription,
+                        subscription.SubscriptionId,
+                        sendEmail: true
+                    );
+                }
+
+                _logger.LogInformation($"Order confirmed and subscription renewed: Order {order.OrderId}, Subscription {subscription.SubscriptionId}");
+            }
+            else
             {
-                await _notificationService.CreateNotificationAsync(
-                    order.Customer.AccountOwner.Value,
-                    NotificationType.OrderConfirmed,
-                    "Order Confirmed",
-                    $"Order {order.OrderNumber} has been confirmed and subscription created",
-                    RelatedToType.Order,
-                    order.OrderId,
-                    sendEmail: true
-                );
+                // NEW ORDER: Create new subscription
+                var subscriptionCount = await _context.Subscriptions.CountAsync();
+                var startDate = DateTime.UtcNow.Date;
+                var renewalDate = startDate.AddYears(1);
 
-                await _notificationService.CreateNotificationAsync(
-                    order.Customer.AccountOwner.Value,
-                    NotificationType.SubscriptionCreated,
-                    "Subscription Created",
-                    $"Subscription {subscription.SubscriptionNumber} has been created for {order.Customer.CompanyName}",
-                    RelatedToType.Subscription,
-                    subscription.SubscriptionId,
-                    sendEmail: true
-                );
+                subscription = new Subscription
+                {
+                    SubscriptionNumber = $"SUB-{DateTime.UtcNow.Year}-{(subscriptionCount + 1):D4}",
+                    CustomerId = order.CustomerId,
+                    OrderId = order.OrderId,
+                    VariantId = order.VariantId,
+                    StartDate = startDate,
+                    CurrentPeriodStart = startDate,
+                    CurrentPeriodEnd = renewalDate.AddDays(-1),
+                    RenewalDate = renewalDate,
+                    AnnualFee = order.ProductVariant.AnnualSubscriptionFee,
+                    Status = SubscriptionStatus.Active,
+                    AutoRenew = true,
+                    CreatedBy = currentUserId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Subscriptions.Add(subscription);
+                await _context.SaveChangesAsync();
+
+                // Create "Created" history entry
+                var history = new SubscriptionHistory
+                {
+                    SubscriptionId = subscription.SubscriptionId,
+                    ChangedByUserId = currentUserId,
+                    ChangeType = SubscriptionChangeType.Created,
+                    NewValue = "Active",
+                    Description = $"Created via order {order.OrderNumber}",
+                    RelatedOrderId = order.OrderId,
+                    ChangedAt = DateTime.UtcNow
+                };
+                _context.SubscriptionHistories.Add(history);
+                await _context.SaveChangesAsync();
+
+                // Send notifications
+                if (order.Customer.AccountOwner != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        order.Customer.AccountOwner.Value,
+                        NotificationType.OrderConfirmed,
+                        "Order Confirmed",
+                        $"Order {order.OrderNumber} has been confirmed and subscription created",
+                        RelatedToType.Order,
+                        order.OrderId,
+                        sendEmail: true
+                    );
+
+                    await _notificationService.CreateNotificationAsync(
+                        order.Customer.AccountOwner.Value,
+                        NotificationType.SubscriptionCreated,
+                        "Subscription Created",
+                        $"Subscription {subscription.SubscriptionNumber} has been created for {order.Customer.CompanyName}",
+                        RelatedToType.Subscription,
+                        subscription.SubscriptionId,
+                        sendEmail: true
+                    );
+                }
+
+                _logger.LogInformation($"Order confirmed and subscription created: Order {order.OrderId}, Subscription {subscription.SubscriptionId}");
             }
 
-            _logger.LogInformation($"Order confirmed and subscription created: Order {order.OrderId}, Subscription {subscription.SubscriptionId}");
-
-            return Ok(ApiResponse<Subscription>.SuccessResponse(subscription, "Order confirmed and subscription created successfully"));
+            return Ok(ApiResponse<Subscription>.SuccessResponse(subscription, "Order confirmed successfully"));
         }
         catch (Exception ex)
         {

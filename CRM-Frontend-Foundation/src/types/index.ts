@@ -201,12 +201,15 @@ export interface ProductVariant {
 export type OrderStatus = 'Draft' | 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
 export type PaymentStatus = 'Pending' | 'Partial' | 'Paid';
 export type UserLicenseType = 'SingleUser' | 'MultiUser';
+export type OrderType = 'New' | 'Renew';
 
 export interface Order {
   orderId: number;
   orderNumber: string;
   customerId: number;
   variantId: number;
+  orderType: OrderType | number;
+  renewedSubscriptionId?: number;
   userLicenseType: UserLicenseType | number;
   quantity: number;
   basePrice: number;
@@ -232,6 +235,7 @@ export interface Order {
   customer?: Customer;
   productVariant?: ProductVariant;
   subscription?: Subscription;
+  renewedSubscription?: Subscription;
   createdByUser?: User;
 }
 
@@ -248,6 +252,7 @@ export interface PartnerEarning {
 
 // Subscription types
 export type SubscriptionStatus = 'Active' | 'Expired' | 'Cancelled' | 'Suspended' | 'PendingRenewal';
+export type SubscriptionChangeType = 'Created' | 'Renewed' | 'Cancelled' | 'Suspended' | 'Reactivated' | 'Expired' | 'VariantChanged' | 'Other';
 
 export interface Subscription {
   subscriptionId: number;
@@ -265,6 +270,9 @@ export interface Subscription {
   cancellationDate?: string;
   cancellationReason?: string;
   cancelledBy?: number;
+  suspensionDate?: string;
+  suspensionReason?: string;
+  suspendedBy?: number;
   renewalCount: number;
   lastPaymentDate?: string;
   nextPaymentDueDate?: string;
@@ -274,6 +282,27 @@ export interface Subscription {
   customer?: Customer;
   order?: Order;
   productVariant?: ProductVariant;
+}
+
+export interface SubscriptionHistory {
+  historyId: number;
+  subscriptionId: number;
+  changeType: SubscriptionChangeType | string;
+  oldValue?: string;
+  newValue?: string;
+  description?: string;
+  relatedOrderId?: number;
+  relatedOrderNumber?: string;
+  changedAt: string;
+  changedByUserName: string;
+}
+
+export interface CancelSubscriptionRequest {
+  cancellationReason: string;
+}
+
+export interface SuspendSubscriptionRequest {
+  suspensionReason: string;
 }
 
 // Activity types
@@ -358,6 +387,10 @@ export type NotificationType =
   | 'SubscriptionCreated'
   | 'SubscriptionRenewalDue'
   | 'SubscriptionExpired'
+  | 'SubscriptionRenewed'
+  | 'SubscriptionCancelled'
+  | 'SubscriptionSuspended'
+  | 'SubscriptionReactivated'
   | 'TaskAssigned'
   | 'ActivityOverdue'
   | 'SystemAlert';

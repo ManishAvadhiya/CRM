@@ -219,7 +219,7 @@ table tbody tr:hover,
 ul li:hover,
 ol li:hover,
 aside nav a:hover {
-  background-color: transparent !important;
+  background-color: transparent ;
 }
 
 /* Vibrant button and badge utilities */

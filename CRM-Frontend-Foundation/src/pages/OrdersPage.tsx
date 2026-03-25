@@ -1,18 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ordersApi, customersApi, productVariantsApi } from '@/services';
+import { useLocation } from 'react-router-dom';
+import { ordersApi, customersApi, productVariantsApi, subscriptionsApi } from '@/services';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import {
   UserLicenseTypeEnum,
   PaymentStatusMap,
+  OrderTypeEnum,
   getOrderStatusString,
   getUserLicenseTypeString,
+  getOrderTypeString,
 } from '@/lib/enum-mappings';
-import type { Order } from '@/types';
+import type { Order, Subscription } from '@/types';
 import {
   ShoppingCart, Plus, Search, Eye, CheckCircle, XCircle, Clock,
-  Truck, FileText, X, ChevronRight, Filter,
+  Truck, FileText, X, ChevronRight, Filter, RefreshCw,
 } from 'lucide-react';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationControls } from '@/components/ui/PaginationControls';
@@ -114,6 +117,7 @@ function ConfirmActionModal({
 
 export default function OrdersPage() {
   const queryClient = useQueryClient();
+  const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const showAuditColumns = user?.role === 'ManagementAdmin' || user?.role === 'Marketing';
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -126,6 +130,8 @@ export default function OrdersPage() {
   const [dateTo, setDateTo] = useState('');
   const [amountFrom, setAmountFrom] = useState('');
   const [amountTo, setAmountTo] = useState('');
+  const [renewalMode, setRenewalMode] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [formData, setFormData] = useState<Partial<Order>>({
     userLicenseType: 'SingleUser',
     quantity: 1,
@@ -147,6 +153,37 @@ export default function OrdersPage() {
     queryKey: ['product-variants'],
     queryFn: () => productVariantsApi.getAll(true),
   });
+
+  const { data: renewableSubscriptions } = useQuery({
+    queryKey: ['renewable-subscriptions'],
+    queryFn: () => subscriptionsApi.getRenewable(),
+    enabled: renewalMode || isCreateOpen,
+  });
+
+  // Handle incoming navigation state from SubscriptionsPage
+  useEffect(() => {
+    const state = location.state as { renewalMode?: boolean; subscriptionId?: number } | null;
+    if (state?.renewalMode) {
+      setRenewalMode(true);
+      setIsCreateOpen(true);
+      if (state.subscriptionId && renewableSubscriptions) {
+        const sub = renewableSubscriptions.find(s => s.subscriptionId === state.subscriptionId);
+        if (sub) {
+          setSelectedSubscription(sub);
+          setFormData({
+            customerId: sub.customerId,
+            variantId: sub.variantId,
+            userLicenseType: 'SingleUser',
+            quantity: 1,
+            discountPercent: 0,
+            taxPercent: 18,
+          });
+        }
+      }
+      // Clear the state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, renewableSubscriptions]);
 
   // Pricing calculations
   const selectedVariant = useMemo(
@@ -176,6 +213,8 @@ export default function OrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       setIsCreateOpen(false);
+      setRenewalMode(false);
+      setSelectedSubscription(null);
       setFormData({ userLicenseType: 'SingleUser', quantity: 1, discountPercent: 0, taxPercent: 18 });
     },
   });
@@ -185,6 +224,7 @@ export default function OrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['renewable-subscriptions'] });
       setConfirmOrder(null);
       setSelectedOrder(null);
       setIsDetailOpen(false);
@@ -192,28 +232,56 @@ export default function OrdersPage() {
   });
 
   const handleCreate = () => {
-    if (!formData.customerId || !formData.variantId || !formData.quantity) {
-      alert('Please fill in all required fields');
-      return;
+    if (renewalMode) {
+      if (!selectedSubscription) {
+        alert('Please select a subscription to renew');
+        return;
+      }
+      const userLicenseType = (formData.userLicenseType || 'SingleUser') as 'SingleUser' | 'MultiUser';
+      const licenseTypeEnum = UserLicenseTypeEnum[userLicenseType];
+      const orderData: any = {
+        customerId: selectedSubscription.customerId,
+        variantId: formData.variantId || selectedSubscription.variantId,
+        orderType: OrderTypeEnum.Renew,
+        renewedSubscriptionId: selectedSubscription.subscriptionId,
+        userLicenseType: licenseTypeEnum,
+        quantity: 1,
+        baseAmount: Number(baseAmount.toFixed(2)),
+        customizationAmount: Number((formData.customizationAmount || 0).toFixed(2)),
+        discountPercent: Number((formData.discountPercent || 0).toFixed(2)),
+        discountAmount: Number(discountAmount.toFixed(2)),
+        subTotal: Number(subTotal.toFixed(2)),
+        taxPercent: Number((formData.taxPercent || 18).toFixed(2)),
+        taxAmount: Number(taxAmount.toFixed(2)),
+        totalAmount: Number(totalAmount.toFixed(2)),
+        notes: formData.notes || '',
+      };
+      createMutation.mutate(orderData);
+    } else {
+      if (!formData.customerId || !formData.variantId || !formData.quantity) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      const userLicenseType = (formData.userLicenseType || 'SingleUser') as 'SingleUser' | 'MultiUser';
+      const licenseTypeEnum = UserLicenseTypeEnum[userLicenseType];
+      const orderData: any = {
+        customerId: Number(formData.customerId),
+        variantId: Number(formData.variantId),
+        orderType: OrderTypeEnum.New,
+        userLicenseType: licenseTypeEnum,
+        quantity: Number(formData.quantity) || 1,
+        baseAmount: Number(baseAmount.toFixed(2)),
+        customizationAmount: Number((formData.customizationAmount || 0).toFixed(2)),
+        discountPercent: Number((formData.discountPercent || 0).toFixed(2)),
+        discountAmount: Number(discountAmount.toFixed(2)),
+        subTotal: Number(subTotal.toFixed(2)),
+        taxPercent: Number((formData.taxPercent || 18).toFixed(2)),
+        taxAmount: Number(taxAmount.toFixed(2)),
+        totalAmount: Number(totalAmount.toFixed(2)),
+        notes: formData.notes || '',
+      };
+      createMutation.mutate(orderData);
     }
-    const userLicenseType = (formData.userLicenseType || 'SingleUser') as 'SingleUser' | 'MultiUser';
-    const licenseTypeEnum = UserLicenseTypeEnum[userLicenseType];
-    const orderData: any = {
-      customerId: Number(formData.customerId),
-      variantId: Number(formData.variantId),
-      userLicenseType: licenseTypeEnum,
-      quantity: Number(formData.quantity) || 1,
-      baseAmount: Number(baseAmount.toFixed(2)),
-      customizationAmount: Number((formData.customizationAmount || 0).toFixed(2)),
-      discountPercent: Number((formData.discountPercent || 0).toFixed(2)),
-      discountAmount: Number(discountAmount.toFixed(2)),
-      subTotal: Number(subTotal.toFixed(2)),
-      taxPercent: Number((formData.taxPercent || 18).toFixed(2)),
-      taxAmount: Number(taxAmount.toFixed(2)),
-      totalAmount: Number(totalAmount.toFixed(2)),
-      notes: formData.notes || '',
-    };
-    createMutation.mutate(orderData);
   };
 
   const handleConfirm = (order: Order) => {
@@ -444,7 +512,7 @@ export default function OrdersPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['Order #', 'Customer', 'Product', 'Details', 'Amount', 'Status', 'Date'].map((h) => (
+                  {['Order #', 'Type', 'Customer', 'Product', 'Details', 'Amount', 'Status', 'Date'].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider"
@@ -466,6 +534,15 @@ export default function OrdersPage() {
                   <tr key={order.orderId} className="group hover:bg-gray-50/60 transition-colors">
                     <td className="px-4 py-4">
                       <span className="text-sm font-semibold text-indigo-600">{order.orderNumber}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                        getOrderTypeString(order.orderType ?? 0) === 'Renew'
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                          : 'bg-blue-50 text-blue-700 border border-blue-200'
+                      }`}>
+                        {getOrderTypeString(order.orderType ?? 0)}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
                       <span className="text-sm text-gray-900">{order.customer?.companyName || '—'}</span>
@@ -545,147 +622,323 @@ export default function OrdersPage() {
       </div>
 
       {/* Create Order Slide Panel */}
-      <SlidePanel open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="New Order">
+      <SlidePanel
+        open={isCreateOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setRenewalMode(false);
+          setSelectedSubscription(null);
+          setFormData({ userLicenseType: 'SingleUser', quantity: 1, discountPercent: 0, taxPercent: 18 });
+        }}
+        title={renewalMode ? 'Renew Subscription' : 'New Order'}
+      >
         <div className="space-y-4">
-          <Field label="Customer *">
-            <select
-              value={formData.customerId || ''}
-              onChange={(e) => setFormData({ ...formData, customerId: Number(e.target.value) })}
-              className={inputCls}
+          {/* Mode Toggle */}
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
+            <button
+              onClick={() => {
+                setRenewalMode(false);
+                setSelectedSubscription(null);
+                setFormData({ userLicenseType: 'SingleUser', quantity: 1, discountPercent: 0, taxPercent: 18 });
+              }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${!renewalMode ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600'}`}
             >
-              <option value="">Select customer</option>
-              {customers?.map((c) => (
-                <option key={c.customerId} value={c.customerId}>
-                  {c.companyName}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Product Variant *">
-            <select
-              value={formData.variantId || ''}
-              onChange={(e) => setFormData({ ...formData, variantId: Number(e.target.value) })}
-              className={inputCls}
+              New Order
+            </button>
+            <button
+              onClick={() => {
+                setRenewalMode(true);
+                setFormData({ userLicenseType: 'SingleUser', quantity: 1, discountPercent: 0, taxPercent: 18 });
+              }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${renewalMode ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600'}`}
             >
-              <option value="">Select variant</option>
-              {variants?.map((v) => (
-                <option key={v.variantId} value={v.variantId}>
-                  {v.variantName}
-                </option>
-              ))}
-            </select>
-          </Field>
+              <RefreshCw className="w-4 h-4" />
+              Renewal
+            </button>
+          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="License Type">
-              <select
-                value={formData.userLicenseType || 'SingleUser'}
-                onChange={(e) => setFormData({ ...formData, userLicenseType: e.target.value as any })}
-                className={inputCls}
+          {renewalMode ? (
+            <>
+              {/* Subscription Selector */}
+              <Field label="Select Subscription to Renew *">
+                <select
+                  value={selectedSubscription?.subscriptionId || ''}
+                  onChange={(e) => {
+                    const sub = renewableSubscriptions?.find(s => s.subscriptionId === Number(e.target.value));
+                    setSelectedSubscription(sub || null);
+                    if (sub) {
+                      setFormData({
+                        ...formData,
+                        customerId: sub.customerId,
+                        variantId: sub.variantId,
+                      });
+                    }
+                  }}
+                  className={inputCls}
+                >
+                  <option value="">Select subscription</option>
+                  {renewableSubscriptions?.map((sub) => (
+                    <option key={sub.subscriptionId} value={sub.subscriptionId}>
+                      {sub.subscriptionNumber} - {sub.customer?.companyName} ({sub.status})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              {selectedSubscription && (
+                <>
+                  {/* Current Subscription Info */}
+                  <div className="bg-indigo-50 rounded-2xl p-4 space-y-2">
+                    <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">Current Subscription</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Customer:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedSubscription.customer?.companyName}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Product:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedSubscription.productVariant?.variantName}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Expires:</span>
+                        <span className="ml-2 font-medium text-gray-900">{formatDate(selectedSubscription.currentPeriodEnd)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Renewals:</span>
+                        <span className="ml-2 font-medium text-gray-900">{selectedSubscription.renewalCount}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional: Upgrade Product */}
+                  <Field label="Product (Change to upgrade)">
+                    <select
+                      value={formData.variantId || selectedSubscription.variantId}
+                      onChange={(e) => setFormData({ ...formData, variantId: Number(e.target.value) })}
+                      className={inputCls}
+                    >
+                      {variants?.map((v) => (
+                        <option key={v.variantId} value={v.variantId}>
+                          {v.variantName} {v.variantId === selectedSubscription.variantId ? '(Current)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Discount (%)">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={formData.discountPercent || 0}
+                        onChange={(e) => setFormData({ ...formData, discountPercent: Number(e.target.value) })}
+                        className={inputCls}
+                      />
+                    </Field>
+                    <Field label="Tax (%)">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={formData.taxPercent || 18}
+                        onChange={(e) => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
+                        className={inputCls}
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Live Pricing Summary */}
+                  {selectedVariant && (
+                    <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
+                      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Renewal Amount</p>
+                      <div className="flex justify-between text-gray-600">
+                        <span>Base price</span>
+                        <span>{formatCurrency(baseAmount)}</span>
+                      </div>
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Discount ({discountPercent}%)</span>
+                          <span>− {formatCurrency(discountAmount)}</span>
+                        </div>
+                      )}
+                      {taxAmount > 0 && (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Tax ({taxPercent}%)</span>
+                          <span>+ {formatCurrency(taxAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-bold text-gray-900 border-t border-gray-200 pt-2 mt-2">
+                        <span>Total</span>
+                        <span className="text-indigo-700">{formatCurrency(totalAmount)}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <Field label="Notes">
+                    <textarea
+                      rows={3}
+                      value={formData.notes || ''}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Optional notes..."
+                      className={inputCls}
+                    />
+                  </Field>
+
+                  <button
+                    onClick={handleCreate}
+                    disabled={createMutation.isPending}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    {createMutation.isPending ? 'Creating...' : 'Create Renewal Order'}
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Field label="Customer *">
+                <select
+                  value={formData.customerId || ''}
+                  onChange={(e) => setFormData({ ...formData, customerId: Number(e.target.value) })}
+                  className={inputCls}
+                >
+                  <option value="">Select customer</option>
+                  {customers?.map((c) => (
+                    <option key={c.customerId} value={c.customerId}>
+                      {c.companyName}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Product Variant *">
+                <select
+                  value={formData.variantId || ''}
+                  onChange={(e) => setFormData({ ...formData, variantId: Number(e.target.value) })}
+                  className={inputCls}
+                >
+                  <option value="">Select variant</option>
+                  {variants?.map((v) => (
+                    <option key={v.variantId} value={v.variantId}>
+                      {v.variantName}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="License Type">
+                  <select
+                    value={formData.userLicenseType || 'SingleUser'}
+                    onChange={(e) => setFormData({ ...formData, userLicenseType: e.target.value as any })}
+                    className={inputCls}
+                  >
+                    <option value="SingleUser">Single User</option>
+                    <option value="MultiUser">Multi User</option>
+                  </select>
+                </Field>
+                <Field label="Quantity *">
+                  <input
+                    type="number"
+                    min={1}
+                    value={formData.quantity || 1}
+                    onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Customization (₹)">
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.customizationAmount || 0}
+                    onChange={(e) => setFormData({ ...formData, customizationAmount: Number(e.target.value) })}
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Discount (%)">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={formData.discountPercent || 0}
+                    onChange={(e) => setFormData({ ...formData, discountPercent: Number(e.target.value) })}
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Tax (%)">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={formData.taxPercent || 18}
+                  onChange={(e) => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
+                  className={inputCls}
+                />
+              </Field>
+
+              {/* Live Pricing Summary */}
+              {selectedVariant && (
+                <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Price Breakdown</p>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Base price × {formData.quantity || 1}</span>
+                    <span>{formatCurrency(baseAmount)}</span>
+                  </div>
+                  {customizationAmount > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Customization</span>
+                      <span>+ {formatCurrency(customizationAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-gray-600">
+                    <span>Sub-total</span>
+                    <span>{formatCurrency(subTotal)}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Discount ({discountPercent}%)</span>
+                      <span>− {formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
+                  {taxAmount > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Tax ({taxPercent}%)</span>
+                      <span>+ {formatCurrency(taxAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-gray-900 border-t border-gray-200 pt-2 mt-2">
+                    <span>Total</span>
+                    <span className="text-indigo-700">{formatCurrency(totalAmount)}</span>
+                  </div>
+                </div>
+              )}
+
+              <Field label="Notes">
+                <textarea
+                  rows={3}
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Optional notes..."
+                  className={inputCls}
+                />
+              </Field>
+
+              <button
+                onClick={handleCreate}
+                disabled={createMutation.isPending}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
               >
-                <option value="SingleUser">Single User</option>
-                <option value="MultiUser">Multi User</option>
-              </select>
-            </Field>
-            <Field label="Quantity *">
-              <input
-                type="number"
-                min={1}
-                value={formData.quantity || 1}
-                onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Customization (₹)">
-              <input
-                type="number"
-                min={0}
-                value={formData.customizationAmount || 0}
-                onChange={(e) => setFormData({ ...formData, customizationAmount: Number(e.target.value) })}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Discount (%)">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={formData.discountPercent || 0}
-                onChange={(e) => setFormData({ ...formData, discountPercent: Number(e.target.value) })}
-                className={inputCls}
-              />
-            </Field>
-          </div>
-
-          <Field label="Tax (%)">
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={formData.taxPercent || 18}
-              onChange={(e) => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
-              className={inputCls}
-            />
-          </Field>
-
-          {/* Live Pricing Summary */}
-          {selectedVariant && (
-            <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Price Breakdown</p>
-              <div className="flex justify-between text-gray-600">
-                <span>Base price × {formData.quantity || 1}</span>
-                <span>{formatCurrency(baseAmount)}</span>
-              </div>
-              {customizationAmount > 0 && (
-                <div className="flex justify-between text-gray-600">
-                  <span>Customization</span>
-                  <span>+ {formatCurrency(customizationAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-gray-600">
-                <span>Sub-total</span>
-                <span>{formatCurrency(subTotal)}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-600">
-                  <span>Discount ({discountPercent}%)</span>
-                  <span>− {formatCurrency(discountAmount)}</span>
-                </div>
-              )}
-              {taxAmount > 0 && (
-                <div className="flex justify-between text-gray-600">
-                  <span>Tax ({taxPercent}%)</span>
-                  <span>+ {formatCurrency(taxAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold text-gray-900 border-t border-gray-200 pt-2 mt-2">
-                <span>Total</span>
-                <span className="text-indigo-700">{formatCurrency(totalAmount)}</span>
-              </div>
-            </div>
+                {createMutation.isPending ? 'Creating...' : 'Create Order'}
+              </button>
+            </>
           )}
-
-          <Field label="Notes">
-            <textarea
-              rows={3}
-              value={formData.notes || ''}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Optional notes..."
-              className={inputCls}
-            />
-          </Field>
-
-          <button
-            onClick={handleCreate}
-            disabled={createMutation.isPending}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
-          >
-            {createMutation.isPending ? 'Creating...' : 'Create Order'}
-          </button>
         </div>
       </SlidePanel>
 
@@ -807,7 +1060,9 @@ export default function OrdersPage() {
         title="Confirm Order"
         message={
           confirmOrder
-            ? `Confirm ${confirmOrder.orderNumber}? This will create a subscription automatically.`
+            ? getOrderTypeString(confirmOrder.orderType ?? 0) === 'Renew'
+              ? `Confirm ${confirmOrder.orderNumber}? This will renew the subscription.`
+              : `Confirm ${confirmOrder.orderNumber}? This will create a subscription automatically.`
             : 'Confirm selected order?'
         }
         confirmText="Confirm"

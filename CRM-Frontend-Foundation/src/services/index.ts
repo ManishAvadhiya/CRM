@@ -5,6 +5,9 @@ import type {
   ProductVariant,
   Order,
   Subscription,
+  SubscriptionHistory,
+  CancelSubscriptionRequest,
+  SuspendSubscriptionRequest,
   Notification,
   DashboardStats,
   Activity,
@@ -112,6 +115,43 @@ export const subscriptionsApi = {
     const { data } = await apiClient.get<ApiResponse<Subscription[]>>(
       '/subscriptions/upcoming-renewals',
       { params: { days } }
+    );
+    return data.data;
+  },
+
+  getRenewable: async () => {
+    const { data } = await apiClient.get<ApiResponse<Subscription[]>>(
+      '/subscriptions/renewable'
+    );
+    return data.data;
+  },
+
+  getHistory: async (id: number) => {
+    const { data } = await apiClient.get<ApiResponse<SubscriptionHistory[]>>(
+      `/subscriptions/${id}/history`
+    );
+    return data.data;
+  },
+
+  cancel: async (id: number, request: CancelSubscriptionRequest) => {
+    const { data } = await apiClient.put<ApiResponse<Subscription>>(
+      `/subscriptions/${id}/cancel`,
+      request
+    );
+    return data.data;
+  },
+
+  suspend: async (id: number, request: SuspendSubscriptionRequest) => {
+    const { data } = await apiClient.put<ApiResponse<Subscription>>(
+      `/subscriptions/${id}/suspend`,
+      request
+    );
+    return data.data;
+  },
+
+  reactivate: async (id: number) => {
+    const { data } = await apiClient.put<ApiResponse<Subscription>>(
+      `/subscriptions/${id}/reactivate`
     );
     return data.data;
   },

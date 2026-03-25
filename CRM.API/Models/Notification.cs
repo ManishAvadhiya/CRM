@@ -56,6 +56,10 @@ public enum NotificationType
     SubscriptionCreated,
     SubscriptionRenewalDue,
     SubscriptionExpired,
+    SubscriptionRenewed,
+    SubscriptionCancelled,
+    SubscriptionSuspended,
+    SubscriptionReactivated,
     TaskAssigned,
     ActivityOverdue,
     SystemAlert

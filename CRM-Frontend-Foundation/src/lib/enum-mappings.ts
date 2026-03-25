@@ -57,6 +57,38 @@ export const PaymentStatusMap: Record<number, string> = {
   2: 'Paid',
 };
 
+export const OrderTypeEnum = {
+  New: 0,
+  Renew: 1,
+} as const;
+
+export const OrderTypeMap: Record<number, string> = {
+  0: 'New',
+  1: 'Renew',
+};
+
+export const SubscriptionChangeTypeEnum = {
+  Created: 0,
+  Renewed: 1,
+  Cancelled: 2,
+  Suspended: 3,
+  Reactivated: 4,
+  Expired: 5,
+  VariantChanged: 6,
+  Other: 7,
+} as const;
+
+export const SubscriptionChangeTypeMap: Record<number, string> = {
+  0: 'Created',
+  1: 'Renewed',
+  2: 'Cancelled',
+  3: 'Suspended',
+  4: 'Reactivated',
+  5: 'Expired',
+  6: 'VariantChanged',
+  7: 'Other',
+};
+
 /**
  * Convert frontend string enum to backend integer
  */
@@ -108,4 +140,14 @@ export const getSubscriptionStatusString = (status: number | string): string => 
 export const getPaymentStatusString = (status: number | string): string => {
   if (typeof status === 'string') return status;
   return toFrontendEnum(status, PaymentStatusMap);
+};
+
+export const getOrderTypeString = (type: number | string): string => {
+  if (typeof type === 'string') return type;
+  return toFrontendEnum(type, OrderTypeMap);
+};
+
+export const getSubscriptionChangeTypeString = (type: number | string): string => {
+  if (typeof type === 'string') return type;
+  return toFrontendEnum(type, SubscriptionChangeTypeMap);
 };

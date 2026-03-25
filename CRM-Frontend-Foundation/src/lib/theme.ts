@@ -13,7 +13,7 @@ export function getStoredTheme(): ThemeMode | null {
 }
 
 export function getCurrentTheme(): ThemeMode {
-  if (!canUseDom()) return 'dark';
+  if (!canUseDom()) return 'light';
   return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
 
@@ -35,6 +35,6 @@ export function setTheme(theme: ThemeMode) {
 export function initializeTheme() {
   if (!canUseDom()) return;
   const stored = getStoredTheme();
-  const theme: ThemeMode = stored ?? 'dark';
+  const theme: ThemeMode = stored ?? 'light';
   setTheme(theme);
 }

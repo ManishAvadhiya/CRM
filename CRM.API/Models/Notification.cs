@@ -51,8 +51,10 @@ public enum NotificationType
 {
     LeadAssigned,
     LeadConverted,
+    FollowUpDue,
     OrderCreated,
     OrderConfirmed,
+    PaymentReceived,
     SubscriptionCreated,
     SubscriptionRenewalDue,
     SubscriptionExpired,

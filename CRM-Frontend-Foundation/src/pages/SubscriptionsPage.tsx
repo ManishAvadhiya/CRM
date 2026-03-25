@@ -307,6 +307,7 @@ export default function SubscriptionsPage() {
   const [showHistory, setShowHistory] = useState<Subscription | null>(null);
   const [cancelModal, setCancelModal] = useState<Subscription | null>(null);
   const [suspendModal, setSuspendModal] = useState<Subscription | null>(null);
+  const [reactivateModal, setReactivateModal] = useState<Subscription | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [suspendReason, setSuspendReason] = useState('');
 
@@ -348,6 +349,7 @@ export default function SubscriptionsPage() {
     mutationFn: (id: number) => subscriptionsApi.reactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      setReactivateModal(null);
       setSelectedSub(null);
     },
   });
@@ -382,9 +384,8 @@ export default function SubscriptionsPage() {
   };
 
   const handleReactivate = (sub: Subscription) => {
-    if (confirm('Are you sure you want to reactivate this subscription?')) {
-      reactivateMutation.mutate(sub.subscriptionId);
-    }
+    setSelectedSub(null);
+    setReactivateModal(sub);
   };
 
   const handleViewHistory = (sub: Subscription) => {
@@ -459,6 +460,19 @@ export default function SubscriptionsPage() {
             />
           </div>
         </ConfirmModal>
+      )}
+
+      {/* Reactivate Modal */}
+      {reactivateModal && (
+        <ConfirmModal
+          title="Reactivate Subscription"
+          message={`Are you sure you want to reactivate ${reactivateModal.subscriptionNumber}? This will resume the subscription.`}
+          confirmLabel="Confirm Reactivation"
+          confirmColor="bg-blue-600 hover:bg-blue-700"
+          onClose={() => setReactivateModal(null)}
+          onConfirm={() => reactivateMutation.mutate(reactivateModal.subscriptionId)}
+          isLoading={reactivateMutation.isPending}
+        />
       )}
 
       <div className="space-y-6">

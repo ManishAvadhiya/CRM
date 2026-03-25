@@ -1,0 +1,124 @@
+erDiagram
+    USER ||--o{ LEAD : creates
+    USER ||--o{ LEAD : assigned_to
+    USER ||--o{ CUSTOMER : creates
+    USER ||--o{ ORDER : creates
+    USER ||--o{ ACTIVITY : creates
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ PASSWORD_RESET : requests
+    USER ||--o{ SUBSCRIPTION_HISTORY : changes
+
+    LEAD ||--o{ LEAD_HISTORY : has
+    LEAD o|--|| CUSTOMER : converts_to
+
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER ||--o{ SUBSCRIPTION : owns
+
+    PRODUCT_VARIANT ||--o{ ORDER : selected_in
+    PRODUCT_VARIANT ||--o{ SUBSCRIPTION : configured_as
+
+    ORDER ||--o| SUBSCRIPTION : activates
+    SUBSCRIPTION ||--o{ SUBSCRIPTION_HISTORY : has
+    ORDER o|--o{ SUBSCRIPTION_HISTORY : related_order
+
+    USER {
+      int UserId PK
+      string Name
+      string Email
+      string Role
+      bool IsActive
+    }
+
+    LEAD {
+      int LeadId PK
+      string CompanyName
+      string ContactName
+      string Status
+      int CreatedBy FK
+      int AssignedTo FK
+      int ConvertedToCustomerId FK
+    }
+
+    LEAD_HISTORY {
+      int HistoryId PK
+      int LeadId FK
+      int ChangedByUserId FK
+      string ChangeType
+      datetime ChangedAt
+    }
+
+    CUSTOMER {
+      int CustomerId PK
+      int LeadId FK
+      string CompanyName
+      string ContactPerson
+      int AccountOwner FK
+      int CreatedBy FK
+    }
+
+    PRODUCT_VARIANT {
+      int VariantId PK
+      string VariantName
+      decimal BasePriceSingleUser
+      decimal BasePriceMultiUser
+      decimal AnnualSubscriptionFee
+    }
+
+    ORDER {
+      int OrderId PK
+      string OrderNumber
+      int CustomerId FK
+      int VariantId FK
+      string OrderType
+      string Status
+      decimal TotalAmount
+      int CreatedBy FK
+      int RenewedSubscriptionId FK
+    }
+
+    SUBSCRIPTION {
+      int SubscriptionId PK
+      string SubscriptionNumber
+      int CustomerId FK
+      int OrderId FK
+      int VariantId FK
+      string Status
+      date RenewalDate
+      int RenewalCount
+    }
+
+    SUBSCRIPTION_HISTORY {
+      int HistoryId PK
+      int SubscriptionId FK
+      int ChangedByUserId FK
+      int RelatedOrderId FK
+      string ChangeType
+      datetime ChangedAt
+    }
+
+    ACTIVITY {
+      int ActivityId PK
+      string ActivityType
+      string RelatedToType
+      int RelatedToId
+      string Status
+      int CreatedBy FK
+      int AssignedTo FK
+    }
+
+    NOTIFICATION {
+      int NotificationId PK
+      int UserId FK
+      string NotificationType
+      string Title
+      bool IsRead
+      bool EmailSent
+    }
+
+    PASSWORD_RESET {
+      int PasswordResetId PK
+      int UserId FK
+      string Otp
+      datetime OtpExpiryTime
+      bool IsUsed
+    }

@@ -28,7 +28,7 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<Notification>>>> GetMyNotifications([FromQuery] bool unreadOnly = false)
+    public async Task<ActionResult<ApiResponse<List<Notification>>>> GetMyNotifications([FromQuery] bool unreadOnly = true)
     {
         try
         {
@@ -44,7 +44,24 @@ public class NotificationsController : ControllerBase
         }
     }
 
-    [HttpPut("{id}/mark-read")]
+    [HttpGet("count")]
+    public async Task<ActionResult<ApiResponse<int>>> GetUnreadCount()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var count = await _notificationService.GetUnreadCountAsync(userId);
+
+            return Ok(ApiResponse<int>.SuccessResponse(count));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error fetching notification count: {ex.Message}");
+            return StatusCode(500, ApiResponse<int>.ErrorResponse("Error fetching notification count"));
+        }
+    }
+
+    [HttpPost("{id}/read")]
     public async Task<ActionResult<ApiResponse<bool>>> MarkAsRead(int id)
     {
         try
@@ -57,7 +74,7 @@ public class NotificationsController : ControllerBase
                 return NotFound(ApiResponse<bool>.ErrorResponse("Notification not found"));
             }
 
-            return Ok(ApiResponse<bool>.SuccessResponse(true, "Notification marked as read"));
+            return Ok(ApiResponse<bool>.SuccessResponse(true, "Notification marked as read and deleted"));
         }
         catch (Exception ex)
         {

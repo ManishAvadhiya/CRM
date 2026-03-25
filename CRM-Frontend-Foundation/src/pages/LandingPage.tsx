@@ -303,8 +303,14 @@ export default function LandingPage() {
               <div className="flex-1 p-5 overflow-hidden">
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <p className="text-xs text-gray-400">Good morning 👋</p>
-                    <h3 className="text-sm font-bold text-gray-800">Hello, Esther Howard</h3>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs text-gray-400">Good morning</p>
+                      <span className="text-xs text-gray-400">👋</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-sm font-bold text-gray-800">Hello,</h3>
+                      <h3 className="text-sm font-bold text-gray-800 font-display">Esther Howard</h3>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-20 h-6 bg-indigo-100 rounded-full" />

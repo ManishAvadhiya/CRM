@@ -1,0 +1,56 @@
+TABLE OF CONTENTS (TEMPLATE)
+
+Certificate
+Declaration of Originality
+Acknowledgement
+Plagiarism Report
+Abstract
+List of Figures
+List of Symbols, Abbreviations and Nomenclature
+
+1. Introduction
+2. Related Work and Background
+3. Modeling and Design
+4. Implementation
+5. Conclusion and Future Scope
+References
+Appendices
+
+------------------------------------------------------------
+LIST OF FIGURES (TEMPLATE)
+
+Figure 3.1  System Architecture Diagram
+Figure 3.2  Use Case Diagram
+Figure 3.3  ER Diagram
+Figure 3.4  DFD (Level 1)
+Figure 4.1  Lead to Customer Workflow
+Figure 4.2  Order Confirmation and Subscription Creation
+Figure 4.3  Dashboard Snapshot
+
+------------------------------------------------------------
+LIST OF SYMBOLS, ABBREVIATIONS AND NOMENCLATURE
+
+API   Application Programming Interface
+CRM   Customer Relationship Management
+DFD   Data Flow Diagram
+DI    Dependency Injection
+ER    Entity Relationship
+JWT   JSON Web Token
+KPI   Key Performance Indicator
+ORM   Object Relational Mapper
+OTP   One Time Password
+RBAC  Role Based Access Control
+SaaS  Software as a Service
+UI    User Interface
+UUID  Universally Unique Identifier
+
+------------------------------------------------------------
+FORMATTING CHECKLIST
+
+- Font: Times New Roman, 12 pt (normal text)
+- Figure captions: below each figure
+- Table captions: above each table
+- Every figure/table must be referenced in main text
+- Avoid unnecessary capitalization
+- Maintain consistent heading levels (max 3 levels)
+- Keep references in IEEE style

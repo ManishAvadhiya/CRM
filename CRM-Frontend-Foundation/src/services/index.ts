@@ -159,7 +159,7 @@ export const subscriptionsApi = {
 
 // Notifications API
 export const notificationsApi = {
-  getAll: async (unreadOnly = false) => {
+  getAll: async (unreadOnly = true) => {
     const { data } = await apiClient.get<ApiResponse<Notification[]>>(
       '/notifications',
       { params: { unreadOnly } }
@@ -167,9 +167,16 @@ export const notificationsApi = {
     return data.data;
   },
 
+  getCount: async () => {
+    const { data } = await apiClient.get<ApiResponse<number>>(
+      '/notifications/count'
+    );
+    return data.data;
+  },
+
   markAsRead: async (id: number) => {
-    const { data } = await apiClient.put<ApiResponse<boolean>>(
-      `/notifications/${id}/mark-read`
+    const { data } = await apiClient.post<ApiResponse<boolean>>(
+      `/notifications/${id}/read`
     );
     return data.data;
   },

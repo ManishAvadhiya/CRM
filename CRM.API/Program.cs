@@ -120,6 +120,10 @@ builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
+
+// Register background services
+builder.Services.AddHostedService<BackgroundNotificationService>();
 
 // Logging
 builder.Logging.ClearProviders();

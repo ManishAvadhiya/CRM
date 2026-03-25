@@ -1,0 +1,73 @@
+flowchart LR
+    partner[Partner]
+    marketing[Marketing]
+    admin[Management Admin]
+    system[(CRM System)]
+
+    uc1((Login / Logout))
+    uc2((Create and Manage Leads))
+    uc3((Convert Lead to Customer))
+    uc4((Manage Customers))
+    uc5((Create Orders))
+    uc6((Confirm Orders))
+    uc7((Manage Subscriptions))
+    uc8((Track Activities))
+    uc9((View Notifications))
+    uc10((View Dashboard KPIs))
+    uc11((View Earnings))
+    uc12((Export Partner Profile))
+    uc13((Manage Users))
+    uc14((Reset Password via OTP))
+
+    system --- uc1
+    system --- uc2
+    system --- uc3
+    system --- uc4
+    system --- uc5
+    system --- uc6
+    system --- uc7
+    system --- uc8
+    system --- uc9
+    system --- uc10
+    system --- uc11
+    system --- uc12
+    system --- uc13
+    system --- uc14
+
+    partner --> uc1
+    partner --> uc2
+    partner --> uc3
+    partner --> uc4
+    partner --> uc5
+    partner --> uc7
+    partner --> uc8
+    partner --> uc9
+    partner --> uc10
+    partner --> uc11
+    partner --> uc12
+    partner --> uc14
+
+    marketing --> uc1
+    marketing --> uc2
+    marketing --> uc3
+    marketing --> uc4
+    marketing --> uc5
+    marketing --> uc6
+    marketing --> uc7
+    marketing --> uc8
+    marketing --> uc9
+    marketing --> uc10
+    marketing --> uc13
+    marketing --> uc14
+
+    admin --> uc1
+    admin --> uc2
+    admin --> uc3
+    admin --> uc4
+    admin --> uc5
+    admin --> uc6
+    admin --> uc7
+    admin --> uc8
+    admin --> uc9
+    admin --> uc10
+    admin --> uc13

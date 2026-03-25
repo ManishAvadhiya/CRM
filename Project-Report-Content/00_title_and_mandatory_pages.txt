@@ -1,0 +1,116 @@
+TITLE OF THE PROJECT
+
+CRM PLATFORM FOR LEAD, ORDER, AND SUBSCRIPTION LIFECYCLE MANAGEMENT
+
+A PROJECT REPORT
+
+Submitted by
+
+Name of the Student (ID No.)
+
+In partial fulfillment for the award of the degree of
+B. TECH. in COMPUTER ENGINEERING
+
+4CP33: Full Semester External Project (FSEP)
+
+BIRLA VISHVAKARMA MAHAVIDYALAYA
+(ENGINEERING COLLEGE)
+(An Autonomous Institution)
+VALLABH VIDYANAGAR
+
+Affiliated to
+GUJARAT TECHNOLOGICAL UNIVERSITY, AHMEDABAD
+
+Academic Year: 2025-2026
+BVM ENGINEERING COLLEGE, VALLABH VIDYANAGAR-388120
+
+================================================================
+APPROVAL SHEET
+================================================================
+
+The project work entitled "CRM Platform for Lead, Order, and Subscription Lifecycle Management" carried out by Name (ID No.) is approved for the submission in the course 4CP33, Full Semester External Project for the partial fulfillment for the award of the degree of B. Tech. in Computer Engineering.
+
+Date:
+Place:
+
+Signatures of Examiners:
+(Names and Affiliations)
+
+================================================================
+CERTIFICATE (DEPARTMENT)
+================================================================
+
+This is to certify that Project Work embodied in this project report titled "CRM Platform for Lead, Order, and Subscription Lifecycle Management" was carried out by Name (ID No.) under the course 4CP33, Full Semester External Project for the partial fulfillment for the award of the degree of B. Tech. in Computer Engineering.
+
+Date:
+Place:
+
+Prefixed Name of Industry Guide
+Designation
+Department and Company / Organization Name,
+Place
+
+Prefixed Name of Supervisor - 1
+Designation
+Computer Engineering Department,
+BVM Engineering College
+
+Prefixed Name of Supervisor - 2
+Designation
+Computer Engineering Department,
+BVM Engineering College
+
+Dr. Darshak G Thakore
+Prof. and Head,
+Computer Engineering Department,
+BVM Engineering College
+
+================================================================
+CERTIFICATE (COMPANY LETTERHEAD)
+================================================================
+
+This is to certify that Name (ID No.) of 4th Level, B.Tech. in Computer Engineering of Birla Vishvakarma Mahavidyalaya, Vallabh Vidyanagar has worked on project under the course (FSEP, 4CP33) titled "CRM Platform for Lead, Order, and Subscription Lifecycle Management" under the supervision of Name of the external supervisor at Company Name. He/She has completed the project work sincerely and we found the work satisfactory.
+
+Place:
+Date:
+
+Name and Signature of the External Supervisor
+Seal of the company
+
+================================================================
+DECLARATION OF ORIGINALITY
+================================================================
+
+I hereby certify that I am the sole author of this report under the course 4CP33 (Full Semester External Project) and that neither any part thereof nor the whole of the report has been submitted for a degree to any other University or Institution.
+
+I certify that, to the best of my knowledge, the current report does not infringe upon anyone's copyright nor does it violate any proprietary rights and that any ideas, techniques, quotations or any other material from the work of other people included in my report, published or otherwise, are fully acknowledged in accordance with standard referencing practices.
+
+I declare that this is a true copy of report, including final revisions, as approved by the report review committee. I have checked write-up of the present report using anti-plagiarism database and it is in permissible limit.
+
+Date:
+Institute Code: 007
+Institute Name: Birla Vishvakarma Mahavidyalaya (BVM) Engineering College
+
+Signature
+Name of the Student
+ID No.
+
+================================================================
+ACKNOWLEDGEMENT (DRAFT)
+================================================================
+
+I express my sincere gratitude to my industry guide, faculty supervisors, and the Computer Engineering Department of BVM Engineering College for their constant guidance and support throughout this Full Semester External Project. I am thankful to my organization for providing practical exposure, project resources, and valuable feedback during implementation and validation.
+
+I also thank my peers, family members, and all contributors who directly or indirectly helped me complete this project successfully.
+
+Name of the Student
+ID No.
+
+================================================================
+PLAGIARISM REPORT PAGE (PLACEHOLDER)
+================================================================
+
+Attach the official plagiarism report generated from one approved tool.
+Recommended tools include Viper, Plagium, Plagiarisma, PlagScan, CopyScape, Jplag, DupliChecker, DustBall, PaperRater, Plagiarism Checker, and WCopyfind.
+
+Insert screenshot/PDF summary here with plagiarism percentage and date.

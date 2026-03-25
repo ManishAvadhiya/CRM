@@ -1,0 +1,93 @@
+CHAPTER 3
+MODELING AND DESIGN
+
+3.1 System Architecture
+
+The system follows a client-server architecture:
+- Presentation Layer: React frontend with protected routes and role-aware modules.
+- API Layer: ASP.NET Core controllers exposing REST endpoints.
+- Domain/Service Layer: JWT, OTP, notification, payment-notification scheduler, and export services.
+- Data Layer: Entity Framework Core with PostgreSQL and migration-based schema evolution.
+
+3.2 Role-Based Access Design
+
+Roles:
+- ManagementAdmin: full administrative control.
+- Marketing: operations management and partner creation.
+- Partner: sales execution on owned data.
+
+Access controls are implemented in two places:
+- Backend authorization attributes and role checks.
+- Frontend route guards and conditional navigation.
+
+3.3 Core Entity Design
+
+Major entities and purpose:
+- User: identity, role, lifecycle state.
+- Lead: pre-sales prospect with status progression.
+- LeadHistory: audit trail of lead updates.
+- Customer: converted and managed client profile.
+- ProductVariant: catalog and pricing basis.
+- Order: commercial transaction details.
+- Subscription: recurring service lifecycle instance.
+- SubscriptionHistory: renewal and state change history.
+- Activity: follow-up actions linked to sales records.
+- Notification: event-driven user alerts and email status.
+- PasswordReset: OTP verification data for reset flow.
+
+3.4 Relationship Design Summary
+
+Primary relationships:
+- User (1) to Lead (many) via CreatedBy and AssignedTo.
+- Lead (0..1) to Customer (1) via conversion mapping.
+- Customer (1) to Order (many).
+- Order (1) to Subscription (0..1) for new order flow.
+- Subscription (1) to SubscriptionHistory (many).
+- ProductVariant (1) to Order/Subscription (many).
+
+Design decisions:
+- Soft delete filters avoid physical deletion and preserve historical data.
+- Enum-to-string persistence improves readability of stored values.
+- Renewal order can reference an existing subscription for lifecycle continuity.
+
+3.5 Module Design
+
+3.5.1 Authentication Module
+- Login validates credentials and issues access and refresh tokens.
+- Refresh endpoint reissues tokens using refresh token cookie.
+- Forgot password initiates OTP generation and email dispatch.
+- OTP verify and password reset endpoints complete recovery flow.
+
+3.5.2 Lead and Customer Module
+- Lead CRUD with role-based visibility.
+- Lead conversion endpoint creates customer and updates lead state.
+- History endpoints provide chronological change records.
+
+3.5.3 Order and Subscription Module
+- Order creation performs price and tax calculations.
+- Order confirmation transitions payment status and creates/renews subscription.
+- Subscription module supports upcoming renewals, cancel, suspend, and reactivate.
+- Subscription history captures all lifecycle transitions.
+
+3.5.4 Activity and Notification Module
+- Activities can be created and tracked with type, due date, status, and outcome.
+- Notification module supports unread retrieval, count, and mark-read operations.
+- Notification service optionally sends email and records email send status.
+
+3.5.5 Dashboard and Export Module
+- Dashboard computes role-specific KPIs and revenue indicators.
+- Export module builds ZIP with preset-wise CSV layouts for external CRM imports.
+
+3.6 Design Artifacts
+
+The report includes:
+- Use Case Diagram (actors and major interactions).
+- ER Diagram (entity relationships and key keys).
+- DFD (context and process-level data movement).
+- Sequence Diagram (lead-to-subscription lifecycle flow).
+
+Mermaid code for these diagrams is provided in separate files in this report pack.
+
+3.7 Summary
+
+The design balances clarity, extensibility, and practical business usability. Chapter 4 explains implementation of these designs with module-level behavior and workflow outcomes.

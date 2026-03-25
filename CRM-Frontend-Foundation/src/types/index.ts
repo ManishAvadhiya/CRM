@@ -382,8 +382,10 @@ export interface UpdateActivityRequest {
 export type NotificationType =
   | 'LeadAssigned'
   | 'LeadConverted'
+  | 'FollowUpDue'
   | 'OrderCreated'
   | 'OrderConfirmed'
+  | 'PaymentReceived'
   | 'SubscriptionCreated'
   | 'SubscriptionRenewalDue'
   | 'SubscriptionExpired'

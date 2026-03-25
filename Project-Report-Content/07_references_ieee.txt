@@ -1,0 +1,30 @@
+REFERENCES (IEEE STYLE)
+
+[1] Microsoft, "ASP.NET Core documentation," Microsoft Learn. [Online]. Available: https://learn.microsoft.com/aspnet/core. [Accessed: 25-Mar-2026].
+
+[2] Microsoft, "Entity Framework Core documentation," Microsoft Learn. [Online]. Available: https://learn.microsoft.com/ef/core. [Accessed: 25-Mar-2026].
+
+[3] Npgsql Team, "Npgsql EF Core Provider," [Online]. Available: https://www.npgsql.org/efcore. [Accessed: 25-Mar-2026].
+
+[4] PostgreSQL Global Development Group, "PostgreSQL Documentation," [Online]. Available: https://www.postgresql.org/docs. [Accessed: 25-Mar-2026].
+
+[5] React Team, "React Documentation," [Online]. Available: https://react.dev. [Accessed: 25-Mar-2026].
+
+[6] TanStack, "TanStack Query Documentation," [Online]. Available: https://tanstack.com/query/latest. [Accessed: 25-Mar-2026].
+
+[7] Zustand Contributors, "Zustand Documentation," [Online]. Available: https://zustand-demo.pmnd.rs. [Accessed: 25-Mar-2026].
+
+[8] Vite Team, "Vite Documentation," [Online]. Available: https://vitejs.dev/guide. [Accessed: 25-Mar-2026].
+
+[9] IETF, "JSON Web Token (JWT), RFC 7519," May 2015. [Online]. Available: https://www.rfc-editor.org/rfc/rfc7519. [Accessed: 25-Mar-2026].
+
+[10] OWASP Foundation, "Password Storage Cheat Sheet," [Online]. Available: https://cheatsheetseries.owasp.org. [Accessed: 25-Mar-2026].
+
+[11] MailKit Project, "MailKit Documentation," [Online]. Available: https://github.com/jstedfast/MailKit. [Accessed: 25-Mar-2026].
+
+[12] Martin Fowler, "Patterns of Enterprise Application Architecture," Addison-Wesley, 2002.
+
+Citation Example in Report Text:
+- JWT-based authentication is implemented for secure stateless authorization [9].
+- Password hashing and credential handling follow recommended secure practices [10].
+- Backend API and ORM architecture follows ASP.NET Core and EF Core practices [1], [2].

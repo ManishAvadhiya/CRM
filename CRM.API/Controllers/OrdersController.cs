@@ -16,12 +16,18 @@ public class OrdersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly ILogger<OrdersController> _logger;
 
-    public OrdersController(ApplicationDbContext context, INotificationService notificationService, ILogger<OrdersController> logger)
+    public OrdersController(
+        ApplicationDbContext context,
+        INotificationService notificationService,
+        IPaymentNotificationService paymentNotificationService,
+        ILogger<OrdersController> logger)
     {
         _context = context;
         _notificationService = notificationService;
+        _paymentNotificationService = paymentNotificationService;
         _logger = logger;
     }
 
@@ -371,19 +377,17 @@ public class OrdersController : ControllerBase
 
                 await _context.SaveChangesAsync();
 
-                // Send renewal notification
-                if (order.Customer.AccountOwner != null)
-                {
-                    await _notificationService.CreateNotificationAsync(
-                        order.Customer.AccountOwner.Value,
-                        NotificationType.SubscriptionRenewed,
-                        "Subscription Renewed",
-                        $"Subscription {subscription.SubscriptionNumber} for {order.Customer.CompanyName} has been renewed until {subscription.CurrentPeriodEnd:yyyy-MM-dd}",
-                        RelatedToType.Subscription,
-                        subscription.SubscriptionId,
-                        sendEmail: true
-                    );
-                }
+                // Send renewal notification - to AccountOwner if set, otherwise to the user confirming the order
+                var notifyUserId = order.Customer.AccountOwner ?? currentUserId;
+                await _notificationService.CreateNotificationAsync(
+                    notifyUserId,
+                    NotificationType.SubscriptionRenewed,
+                    "Subscription Renewed",
+                    $"Subscription {subscription.SubscriptionNumber} for {order.Customer.CompanyName} has been renewed until {subscription.CurrentPeriodEnd:yyyy-MM-dd}",
+                    RelatedToType.Subscription,
+                    subscription.SubscriptionId,
+                    sendEmail: true
+                );
 
                 _logger.LogInformation($"Order confirmed and subscription renewed: Order {order.OrderId}, Subscription {subscription.SubscriptionId}");
             }
@@ -428,32 +432,33 @@ public class OrdersController : ControllerBase
                 _context.SubscriptionHistories.Add(history);
                 await _context.SaveChangesAsync();
 
-                // Send notifications
-                if (order.Customer.AccountOwner != null)
-                {
-                    await _notificationService.CreateNotificationAsync(
-                        order.Customer.AccountOwner.Value,
-                        NotificationType.OrderConfirmed,
-                        "Order Confirmed",
-                        $"Order {order.OrderNumber} has been confirmed and subscription created",
-                        RelatedToType.Order,
-                        order.OrderId,
-                        sendEmail: true
-                    );
+                // Send notifications - to AccountOwner if set, otherwise to the user confirming the order
+                var notifyUserId = order.Customer.AccountOwner ?? currentUserId;
+                await _notificationService.CreateNotificationAsync(
+                    notifyUserId,
+                    NotificationType.OrderConfirmed,
+                    "Order Confirmed",
+                    $"Order {order.OrderNumber} has been confirmed and subscription created",
+                    RelatedToType.Order,
+                    order.OrderId,
+                    sendEmail: true
+                );
 
-                    await _notificationService.CreateNotificationAsync(
-                        order.Customer.AccountOwner.Value,
-                        NotificationType.SubscriptionCreated,
-                        "Subscription Created",
-                        $"Subscription {subscription.SubscriptionNumber} has been created for {order.Customer.CompanyName}",
-                        RelatedToType.Subscription,
-                        subscription.SubscriptionId,
-                        sendEmail: true
-                    );
-                }
+                await _notificationService.CreateNotificationAsync(
+                    notifyUserId,
+                    NotificationType.SubscriptionCreated,
+                    "Subscription Created",
+                    $"Subscription {subscription.SubscriptionNumber} has been created for {order.Customer.CompanyName}",
+                    RelatedToType.Subscription,
+                    subscription.SubscriptionId,
+                    sendEmail: true
+                );
 
                 _logger.LogInformation($"Order confirmed and subscription created: Order {order.OrderId}, Subscription {subscription.SubscriptionId}");
             }
+
+            // Schedule payment received notification (1 minute delay)
+            await _paymentNotificationService.SchedulePaymentReceivedNotificationAsync(order.OrderId);
 
             return Ok(ApiResponse<Subscription>.SuccessResponse(subscription, "Order confirmed successfully"));
         }

@@ -1,0 +1,13 @@
+ABSTRACT
+
+This project presents a full-stack Customer Relationship Management (CRM) platform designed to manage the complete business pipeline from lead acquisition to subscription renewal. The system is implemented using ASP.NET Core Web API, Entity Framework Core, PostgreSQL, React, TypeScript, and Zustand/React Query based state architecture.
+
+The application supports three organizational roles: Management Admin, Marketing, and Partner. Role-based access control is implemented at API level and route level so each user gets controlled visibility and operations. The solution includes lead capture and tracking, lead conversion into customer records, customer profile management, order creation with configurable pricing, automated subscription creation upon order confirmation, subscription lifecycle operations (renew, suspend, reactivate, cancel), activity logging, and in-app/email notification workflows.
+
+The backend follows layered service-oriented structure with dedicated modules for JWT authentication, OTP-based password reset, notification dispatch, and export generation. The database design includes soft deletion filters, audit-friendly history tables for leads and subscriptions, and strongly typed domain enums. The frontend provides protected routes, modular pages, and service wrappers mapped to backend endpoints.
+
+A key implementation focus is end-to-end business continuity: once a lead is converted, the system enables streamlined order booking, payment confirmation, subscription activation, and renewal forecasting through dashboard indicators (30-day and 90-day upcoming renewals). The project also includes partner earning analytics using a commission model on confirmed and delivered orders.
+
+The developed CRM demonstrates practical software engineering outcomes in requirements realization, domain modeling, API design, UI integration, and real-world deployment readiness. Future enhancements include payment gateway integration, richer analytics, scheduled background automation, and stronger observability capabilities.
+
+Keywords: CRM, Lead Management, Subscription Lifecycle, ASP.NET Core, React, PostgreSQL, RBAC.

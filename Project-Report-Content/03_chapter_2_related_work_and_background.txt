@@ -1,0 +1,77 @@
+CHAPTER 2
+RELATED WORK AND BACKGROUND
+
+2.1 Requirement Analysis
+
+Functional requirements:
+- User authentication and role-based authorization.
+- Lead management with status transitions and audit history.
+- Customer management with profile and tax fields.
+- Product variant management.
+- Order creation and confirmation flow.
+- Subscription lifecycle and renewal tracking.
+- Activity logging linked to lead/customer context.
+- Notification center with read/unread handling.
+- Dashboard KPIs and partner earnings.
+- Data export for partner profile.
+
+Non-functional requirements:
+- Secure authentication and cookie-based token handling.
+- Data consistency using relational constraints.
+- Maintainability through modular controllers/services.
+- Usability through role-specific route control.
+- Performance for standard CRM workload.
+
+2.2 Technology Stack
+
+Backend:
+- ASP.NET Core Web API (.NET 8): API hosting and middleware pipeline.
+- Entity Framework Core: ORM and schema migrations.
+- PostgreSQL: relational persistence and query handling.
+- MailKit SMTP integration: outbound transactional email.
+- BCrypt: secure password hashing.
+
+Frontend:
+- React 18 + TypeScript: component-driven typed UI.
+- React Router: public/protected route architecture.
+- React Query: server state and mutation management.
+- Zustand: lightweight authentication store.
+- Tailwind CSS: utility-first styling.
+
+2.3 Authentication and Security Background
+
+Security model implemented:
+- Access and refresh token generation using JWT.
+- Role claims embedded in token payload.
+- Cookie-based token transport.
+- Password hash verification through BCrypt.
+- OTP-assisted password reset for non-admin roles.
+
+2.4 Domain Background
+
+The CRM domain modeled in this project includes:
+- Sales pipeline entities: Lead, Customer, Order, Subscription.
+- Operations entities: Activity, Notification.
+- Security entities: User, PasswordReset.
+- Audit entities: LeadHistory, SubscriptionHistory.
+
+This reflects a practical SaaS sales environment where recurring revenue is subscription-driven and renewal continuity is business critical.
+
+2.5 Existing Practices and Gap
+
+Common SMB practice typically relies on:
+- Spreadsheet-based lead lists.
+- Manual customer follow-up updates.
+- Separate accounting and communication tools.
+
+Observed gaps:
+- No single source of truth.
+- Weak role accountability.
+- Missed renewal planning.
+- Difficult partner performance tracking.
+
+The developed solution addresses these gaps by consolidating all major sales lifecycle operations into one integrated platform.
+
+2.6 Summary
+
+Chapter 2 established technical and domain foundations used in implementation. The next chapter formalizes the design models and system structure used to realize these requirements.

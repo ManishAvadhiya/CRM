@@ -1,0 +1,40 @@
+CHAPTER 5
+CONCLUSION AND FUTURE SCOPE
+
+5.1 Conclusion
+
+This project successfully delivers a practical CRM platform that unifies lead handling, customer records, order processing, and subscription lifecycle management in a single web solution. The implementation demonstrates strong alignment between requirements, data design, API logic, and frontend integration.
+
+The system addresses key operational pain points such as fragmented data handling, manual renewal tracking, and limited partner performance visibility. Through role-based control and event-driven notifications, the platform improves accountability, workflow continuity, and timely action.
+
+Key project strengths:
+- Complete lifecycle support from lead capture to subscription renewal.
+- Robust domain model with history/audit support.
+- Role-aware API and UI control.
+- Configurable export support for external CRM interoperability.
+- Practical dashboard metrics for decision support.
+
+5.2 Limitations
+
+Current limitations observed in implementation stage:
+- No production payment gateway integration (payment notification scheduler is simulated).
+- Background jobs can be expanded for fully automated expiry/reminder orchestration.
+- Single-tenant architecture; tenant isolation not implemented.
+- No centralized observability dashboard for logs/alerts.
+- Advanced analytics and forecasting are not yet implemented.
+
+5.3 Future Scope
+
+Planned enhancements:
+- Integrate real payment providers and transaction reconciliation.
+- Implement scheduler-based automated renewal reminders and expiry transitions.
+- Add multi-tenant architecture with tenant-level data separation.
+- Add advanced analytics (cohort, churn, renewal probability, partner productivity).
+- Introduce mobile companion app for field partner workflows.
+- Add audit dashboard and action traceability for compliance.
+- Extend activity linking to order/subscription entities through validated references.
+- Add rate limiting and stronger API abuse protection controls.
+
+5.4 Final Remark
+
+The developed CRM platform is deployment-ready for controlled organizational adoption and provides a strong foundation for progressive enterprise-grade enhancement. The project fulfills the objectives of Full Semester External Project by combining software engineering theory with real operational implementation.

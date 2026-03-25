@@ -1,0 +1,63 @@
+CHAPTER 1
+INTRODUCTION
+
+1.1 Background
+
+Organizations handling B2B software sales require continuous coordination across lead tracking, customer onboarding, order processing, and annual subscription renewals. In many small and medium teams, this flow is managed through spreadsheets and disconnected tools, resulting in data inconsistency, delayed follow-ups, and weak visibility of sales performance.
+
+To address this, the present project develops an integrated CRM platform that supports end-to-end operations in a single application. The platform is focused on practical business usage and includes lead qualification, customer records, order management, subscription lifecycle, notifications, and partner earnings analytics.
+
+1.2 Problem Statement
+
+The target organization required a centralized digital workflow with the following challenges solved:
+- Scattered data across multiple files and channels.
+- No structured lead-to-customer conversion tracking.
+- No unified annual renewal and subscription monitoring mechanism.
+- Limited visibility of partner-wise sales contribution and earnings.
+- Manual communication and missed follow-ups.
+
+1.3 Objectives
+
+The project objectives are:
+- Build a secure and role-based CRM system for Management Admin, Marketing, and Partner users.
+- Implement lead creation, assignment, status tracking, and conversion to customer.
+- Provide customer profile management with business and billing attributes.
+- Support order creation with product variant pricing, discount, tax, and total calculation.
+- Automatically create or renew subscriptions from confirmed orders.
+- Implement subscription lifecycle actions (cancel, suspend, reactivate, renewal forecasting).
+- Provide dashboard analytics for operational and revenue insights.
+- Enable in-app and email notifications for critical events.
+- Provide export support for partner data portability.
+
+1.4 Scope of the Project
+
+The implemented scope includes:
+- Web-based API backend with relational data persistence.
+- Responsive frontend for all business modules.
+- Authentication using JWT and refresh tokens.
+- OTP-based password reset for selected roles.
+- Soft delete and history tracking for key entities.
+
+Out of scope (future work oriented):
+- Multi-tenant isolation at database level.
+- Online payment gateway integration.
+- Mobile application clients.
+- Advanced BI dashboards and predictive analytics.
+
+1.5 Methodology Overview
+
+The project follows iterative development:
+- Requirement understanding from business flow.
+- Data model design and entity relationship mapping.
+- API-first backend implementation with role checks.
+- Frontend integration through typed service layer.
+- Module testing and workflow validation.
+- Reporting and documentation.
+
+1.6 Organization of the Report
+
+- Chapter 1 presents project motivation, objectives, and scope.
+- Chapter 2 covers related context, requirements, and technology background.
+- Chapter 3 describes modeling and system design.
+- Chapter 4 explains implementation details and module workflows.
+- Chapter 5 concludes outcomes and future enhancements.

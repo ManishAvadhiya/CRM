@@ -6,9 +6,10 @@ namespace CRM.API.Services;
 
 public interface INotificationService
 {
-    Task CreateNotificationAsync(int userId, NotificationType type, string title, string message, 
+    Task CreateNotificationAsync(int userId, NotificationType type, string title, string message,
         RelatedToType? relatedType = null, int? relatedId = null, bool sendEmail = false);
     Task<List<Notification>> GetUserNotificationsAsync(int userId, bool unreadOnly = false);
+    Task<int> GetUnreadCountAsync(int userId);
     Task<bool> MarkAsReadAsync(int notificationId, int userId);
     Task<bool> MarkAllAsReadAsync(int userId);
 }
@@ -87,8 +88,15 @@ public class NotificationService : INotificationService
 
         return await query
             .OrderByDescending(n => n.CreatedAt)
-            .Take(50)
+            .Take(20)
             .ToListAsync();
+    }
+
+    public async Task<int> GetUnreadCountAsync(int userId)
+    {
+        return await _context.Notifications
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .CountAsync();
     }
 
     public async Task<bool> MarkAsReadAsync(int notificationId, int userId)
@@ -99,8 +107,8 @@ public class NotificationService : INotificationService
         if (notification == null)
             return false;
 
-        notification.IsRead = true;
-        notification.ReadAt = DateTime.UtcNow;
+        // Delete the notification immediately (as per requirements)
+        _context.Notifications.Remove(notification);
         await _context.SaveChangesAsync();
 
         return true;
@@ -112,13 +120,10 @@ public class NotificationService : INotificationService
             .Where(n => n.UserId == userId && !n.IsRead)
             .ToListAsync();
 
-        foreach (var notification in unreadNotifications)
-        {
-            notification.IsRead = true;
-            notification.ReadAt = DateTime.UtcNow;
-        }
-
+        // Delete all unread notifications (as per requirements)
+        _context.Notifications.RemoveRange(unreadNotifications);
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -129,7 +134,9 @@ public class NotificationService : INotificationService
             NotificationType.SubscriptionExpired => NotificationPriority.High,
             NotificationType.SubscriptionRenewalDue => NotificationPriority.High,
             NotificationType.OrderConfirmed => NotificationPriority.High,
+            NotificationType.PaymentReceived => NotificationPriority.High,
             NotificationType.ActivityOverdue => NotificationPriority.High,
+            NotificationType.FollowUpDue => NotificationPriority.High,
             NotificationType.LeadAssigned => NotificationPriority.Medium,
             NotificationType.TaskAssigned => NotificationPriority.Medium,
             _ => NotificationPriority.Low

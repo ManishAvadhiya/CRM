@@ -1,0 +1,83 @@
+API MODULE MAPPING (FOR IMPLEMENTATION CHAPTER APPENDIX)
+
+Base Route Prefix: /api
+
+1) Auth Controller (/auth)
+- POST /login
+- POST /refresh
+- POST /logout
+- POST /forgot-password
+- POST /verify-otp
+- POST /reset-password
+
+2) Users Controller (/users)
+- GET /
+- POST /create-marketing
+- GET /my-partners
+- POST /create-partner
+- PUT /{userId}/disable
+- PUT /{userId}/enable
+- PUT /{userId}
+- DELETE /{userId}
+- GET /me
+- POST /change-password
+
+3) Leads Controller (/leads)
+- GET /
+- GET /{id}
+- POST /
+- PUT /{id}
+- DELETE /{id}
+- POST /{id}/convert
+- GET /{id}/with-history
+- POST /{id}/add-note
+- PUT /{id}/update-status
+- GET /{id}/history
+
+4) Customers Controller (/customers)
+- GET /
+- GET /{id}
+- POST /
+- PUT /{id}
+- DELETE /{id}
+
+5) Product Variants Controller (/productvariants)
+- GET /
+- GET /{id}
+
+6) Orders Controller (/orders)
+- GET /
+- GET /{id}
+- GET /earnings
+- POST /
+- PUT /{id}/confirm
+
+7) Subscriptions Controller (/subscriptions)
+- GET /
+- GET /{id}
+- GET /upcoming-renewals
+- GET /renewable
+- GET /{id}/history
+- PUT /{id}/cancel
+- PUT /{id}/suspend
+- PUT /{id}/reactivate
+
+8) Activities Controller (/activities)
+- GET /
+- GET /{id}
+- POST /
+- PUT /{id}
+- DELETE /{id}
+
+9) Notifications Controller (/notifications)
+- GET /
+- GET /count
+- POST /{id}/read
+- PUT /mark-all-read
+
+10) Dashboard Controller (/dashboard)
+- GET /stats
+- GET /recent-activities
+
+11) Export Controller (/export)
+- GET /partner-profile

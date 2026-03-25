@@ -1,0 +1,46 @@
+sequenceDiagram
+    autonumber
+    actor Partner
+    participant FE as Frontend
+    participant LeadAPI as LeadsController
+    participant CustAPI as CustomersController
+    participant OrderAPI as OrdersController
+    participant SubAPI as SubscriptionsController
+    participant Notify as NotificationService
+    participant DB as PostgreSQL
+
+    Partner->>FE: Create lead form submit
+    FE->>LeadAPI: POST /api/leads
+    LeadAPI->>DB: Insert lead
+    LeadAPI->>Notify: LeadAssigned notification (optional)
+    LeadAPI-->>FE: Lead created
+
+    Partner->>FE: Convert lead
+    FE->>LeadAPI: POST /api/leads/{id}/convert
+    LeadAPI->>DB: Insert customer + update lead status Converted
+    LeadAPI->>Notify: LeadConverted notification
+    LeadAPI-->>FE: Customer generated
+
+    Partner->>FE: Create new order
+    FE->>OrderAPI: POST /api/orders
+    OrderAPI->>DB: Insert order with calculated totals
+    OrderAPI->>Notify: OrderCreated notification
+    OrderAPI-->>FE: Order created (Pending)
+
+    Partner->>FE: Confirm order
+    FE->>OrderAPI: PUT /api/orders/{id}/confirm
+    OrderAPI->>DB: Update order status Confirmed
+    alt New order flow
+        OrderAPI->>DB: Insert new subscription
+        OrderAPI->>DB: Insert subscription history (Created)
+        OrderAPI->>Notify: OrderConfirmed + SubscriptionCreated
+    else Renewal order flow
+        OrderAPI->>DB: Update existing subscription period
+        OrderAPI->>DB: Insert subscription history (Renewed)
+        OrderAPI->>Notify: SubscriptionRenewed
+    end
+    OrderAPI-->>FE: Subscription response
+
+    FE->>SubAPI: GET /api/subscriptions/upcoming-renewals?days=30
+    SubAPI->>DB: Query active subscriptions by renewal date
+    SubAPI-->>FE: Renewal forecast list

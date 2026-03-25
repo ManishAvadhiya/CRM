@@ -87,9 +87,12 @@ function getWishMessage(name?: string) {
   const hour = new Date().getHours();
   const firstName = (name || 'there').split(' ')[0];
 
-  if (hour < 12) return `Good morning, ${firstName}`;
-  if (hour < 17) return `Good afternoon, ${firstName}`;
-  return `Good evening, ${firstName}`;
+  let greeting = '';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 17) greeting = 'Good afternoon';
+  else greeting = 'Good evening';
+
+  return { greeting, name: firstName };
 }
 
 function formatInputDate(date: Date) {
@@ -421,13 +424,14 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="inline-flex items-center px-4 py-2 rounded-xl bg-indigo-100 text-indigo-700 text-lg sm:text-3xl font-bold tracking-tight mb-2 shadow-sm">
-              {wishMessage}
-            </p>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-lg sm:text-3xl font-bold tracking-tight mb-2 shadow-sm">
+              <span>{wishMessage.greeting},</span>
+              <span className="font-display">{wishMessage.name}</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
               {isPartner ? 'Partner Performance Dashboard' : 'Revenue Intelligence Dashboard'}
             </h1>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
               Filter analytics by week, month, year, or custom range to inspect conversion and revenue behavior.
             </p>
           </div>

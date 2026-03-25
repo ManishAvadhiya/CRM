@@ -16,6 +16,11 @@ export default {
   		}
   	},
   	extend: {
+  		fontFamily: {
+  			sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+  			mono: ['Geist Mono', 'monospace'],
+  			display: ['Playfair Display', 'serif'],
+  		},
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',

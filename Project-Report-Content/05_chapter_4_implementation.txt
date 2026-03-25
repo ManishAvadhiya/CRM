@@ -1,0 +1,118 @@
+CHAPTER 4
+IMPLEMENTATION
+
+4.1 Backend Implementation Overview
+
+The backend is implemented as ASP.NET Core REST API with controller-based modules and DI services. Core configuration includes:
+- PostgreSQL DbContext registration.
+- JWT authentication with cookie token extraction.
+- CORS policy for frontend integration.
+- Swagger for API testing.
+- Seed logic for default admin user and product variants.
+
+4.2 Authentication and User Management
+
+Implemented features:
+- POST /api/auth/login: verifies credentials and returns tokenized session data.
+- POST /api/auth/refresh: rotates access and refresh tokens.
+- POST /api/auth/logout: clears cookie session.
+- POST /api/auth/forgot-password, /verify-otp, /reset-password: OTP workflow.
+
+User module supports:
+- Management admin creation of marketing users.
+- Marketing/admin creation of partner users.
+- Enable/disable/update/delete operations with role controls.
+- Self profile retrieval and password change.
+
+4.3 Lead Management Implementation
+
+Lead module provides:
+- Create, list, update, delete operations.
+- Status filtering and role-wise visibility.
+- Lead conversion endpoint to create linked customer.
+- History endpoints including notes and status update tracking.
+
+Key behavior:
+- Partner sees only own leads.
+- Assigned users receive notifications on lead assignment.
+- Conversion triggers customer creation and lead conversion metadata updates.
+
+4.4 Customer and Product Variant Implementation
+
+Customer module includes:
+- Full CRUD with account owner mapping and business profile fields.
+- Optional link with source lead.
+
+Product variant module includes:
+- Retrieval of active/all variants.
+- Pricing dimensions for single-user and multi-user licensing.
+
+4.5 Order and Subscription Implementation
+
+Order module features:
+- Order creation with automatic amount calculations:
+  BaseAmount = BasePrice x Quantity
+  DiscountAmount = BaseAmount x DiscountPercent / 100
+  SubTotal = BaseAmount + CustomizationAmount - DiscountAmount
+  TaxAmount = SubTotal x TaxPercent / 100
+  TotalAmount = SubTotal + TaxAmount
+- Earnings endpoint with commission calculation for partners.
+- Confirm endpoint handling two paths:
+  1) New Order: create subscription and initial history entry.
+  2) Renewal Order: extend existing subscription and log renewal history.
+
+Subscription module features:
+- List and filter by status.
+- Upcoming renewal forecast by configurable day window.
+- Renewable list for active/expired subscriptions.
+- Lifecycle actions: cancel, suspend, reactivate.
+- History retrieval for auditability.
+
+4.6 Activity and Notification Implementation
+
+Activity module:
+- Tracks calls, meetings, emails, tasks, and notes.
+- Supports relation with lead/customer in current constraints.
+- Handles status completion with completed-by metadata.
+
+Notification module:
+- User-specific retrieval and unread count.
+- Mark single notification read and mark all read.
+- Notification service supports optional email dispatch and tracking fields.
+
+4.7 Dashboard and Export Implementation
+
+Dashboard:
+- Partner dashboard returns own leads, customers, orders, subscriptions, revenue, earnings, and renewal counts.
+- Admin/marketing dashboard returns global metrics.
+
+Export:
+- Partner-only ZIP export endpoint.
+- Includes CSV files for leads, customers, orders, subscriptions, products, and earnings.
+- Supports generic and CRM-specific presets (Zoho, HubSpot, Salesforce style mapping).
+
+4.8 Frontend Implementation Overview
+
+Frontend implementation includes:
+- React Router structure with protected dashboard routes.
+- Role-based user management route handling.
+- Auth state persisted through Zustand and cookie values.
+- Typed API service layer mapped to backend endpoints.
+- Module pages for leads, customers, orders, subscriptions, notifications, activities, earnings, and account details.
+
+4.9 Test and Validation Summary (Project-Level)
+
+Validation performed through:
+- API execution through local environment and role-based checks.
+- End-to-end scenario checks for lead conversion and order confirmation.
+- Subscription lifecycle state transition testing.
+- Frontend route guard and service call verification.
+
+4.10 Results Snapshot
+
+Major achieved outcomes:
+- Integrated lifecycle from lead to active subscription.
+- Role-based operational control.
+- Notification-driven follow-up support.
+- Export-enabled external reporting.
+- Dashboard visibility for sales and renewal planning.

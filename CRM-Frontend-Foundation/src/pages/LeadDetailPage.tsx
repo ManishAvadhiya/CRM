@@ -170,7 +170,8 @@ export function LeadDetailPage() {
 
   const canEdit = user?.role === 'ManagementAdmin' || lead?.createdBy === user?.userId;
   const canAddNote = canEdit && user?.role !== 'Marketing';
-  const canChangeStatus = canEdit && user?.role !== 'Marketing';
+  const isLostLead = lead?.status === 'Lost';
+  const canChangeStatus = canEdit && user?.role !== 'Marketing' && !isLostLead;
   const canConvert = lead?.status !== 'Converted' && lead?.status !== 'Lost';
 
   if (isLoading) {
@@ -302,6 +303,12 @@ export function LeadDetailPage() {
                   )}
                   {user?.role === 'Marketing' && !canChangeStatus && (
                     <div title="Marketing users cannot change status" className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 cursor-not-allowed rounded-xl opacity-50">
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Change Status
+                    </div>
+                  )}
+                  {isLostLead && user?.role !== 'Marketing' && (
+                    <div title="Lost leads cannot change status" className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 cursor-not-allowed rounded-xl opacity-50">
                       <Edit3 className="w-3.5 h-3.5" />
                       Change Status
                     </div>

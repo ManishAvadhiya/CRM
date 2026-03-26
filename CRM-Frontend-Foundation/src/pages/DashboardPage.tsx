@@ -41,6 +41,8 @@ type DateRange = {
   to: Date;
 };
 
+const PARTNER_COMMISSION_RATE = 10;
+
 function StatCard({
   label,
   value,
@@ -142,7 +144,18 @@ function getActivityIcon(activity: ActivityType) {
 }
 
 function isSuccessfulOrder(status: string | number | undefined) {
-  return status === 'Confirmed' || status === 'Delivered' || status === 2 || status === 3;
+  return (
+    status === 'Confirmed' ||
+    status === 'Delivered' ||
+    status === 'PaymentReceived' ||
+    status === 2 ||
+    status === 3 ||
+    status === 4
+  );
+}
+
+function isDeliveredOrder(status: string | number | undefined) {
+  return status === 'Delivered' || status === 'PaymentReceived' || status === 3 || status === 4;
 }
 
 function isPendingOrder(status: string | number | undefined) {
@@ -234,7 +247,7 @@ export default function DashboardPage() {
     : 0;
 
   const deliveredRate = filteredOrders.length
-    ? Math.round((filteredOrders.filter((o) => o.status === 'Delivered' || o.status === 3).length / filteredOrders.length) * 100)
+    ? Math.round((filteredOrders.filter((o) => isDeliveredOrder(o.status)).length / filteredOrders.length) * 100)
     : 0;
 
   const winRate = filteredOrders.length
@@ -248,6 +261,8 @@ export default function DashboardPage() {
   const pendingRevenue = filteredOrders
     .filter((o) => isPendingOrder(o.status))
     .reduce((acc, o) => acc + Number(o.totalAmount || 0), 0);
+
+  const partnerEarnings = Math.round((realizedRevenue * PARTNER_COMMISSION_RATE) / 100);
 
   const lostLeads = filteredLeads.filter((l) => l.status === 'Lost');
   const lostAmount = lostLeads.reduce((acc, l) => acc + Number(l.estimatedValue || 0), 0);
@@ -514,8 +529,12 @@ export default function DashboardPage() {
           />
           <StatCard
             label={isPartner ? 'My Earnings' : 'Lost Opportunity'}
-            value={formatCurrency(lostAmount)}
-            sub={`${lostLeads.length} lost leads in selected period`}
+            value={formatCurrency(isPartner ? partnerEarnings : lostAmount)}
+            sub={
+              isPartner
+                ? `${PARTNER_COMMISSION_RATE}% commission on confirmed/paid orders`
+                : `${lostLeads.length} lost leads in selected period`
+            }
             icon={Target}
             accent="bg-rose-50 text-rose-600"
           />

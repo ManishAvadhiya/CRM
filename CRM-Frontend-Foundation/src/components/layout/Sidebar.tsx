@@ -171,7 +171,7 @@ export default function Sidebar() {
         ) : (
           <div className="overflow-hidden">
             <BrandLogo />
-            <p className="text-gray-400 text-[10px] font-medium uppercase tracking-widest ml-10 -mt-0.5">Platform</p>
+            <p className="text-gray-400 text-[10px] font-medium uppercase tracking-widest ml-10 -mt-0.5"></p>
           </div>
         )}
       </div>

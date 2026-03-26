@@ -7,16 +7,16 @@ export const OrderStatusEnum = {
   Draft: 0,
   Pending: 1,
   Confirmed: 2,
-  Delivered: 3,
-  Cancelled: 4,
+  Cancelled: 3,
+  PaymentReceived: 4,
 } as const;
 
 export const OrderStatusMap: Record<number, string> = {
   0: 'Draft',
   1: 'Pending',
   2: 'Confirmed',
-  3: 'Delivered',
-  4: 'Cancelled',
+  3: 'Cancelled',
+  4: 'PaymentReceived',
 };
 
 export const UserLicenseTypeEnum = {

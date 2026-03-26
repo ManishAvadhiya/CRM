@@ -63,9 +63,7 @@ public enum ActivityType
 {
     Call,
     Meeting,
-    Email,
-    Task,
-    Note
+    Email
 }
 
 public enum RelatedToType

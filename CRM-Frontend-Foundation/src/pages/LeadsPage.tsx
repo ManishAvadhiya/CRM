@@ -205,6 +205,7 @@ function LeadForm({ data, onChange, onSubmit, isPending, mode }: {
   data: Partial<Lead>; onChange: (d: Partial<Lead>) => void; onSubmit: () => void; isPending: boolean; mode: 'create' | 'edit';
 }) {
   const up = (patch: Partial<Lead>) => onChange({ ...data, ...patch });
+  const isStatusLocked = mode === 'edit' && (data.status as unknown as string) === 'Lost';
   return (
     <div className="space-y-5">
       {/* Required */}
@@ -267,7 +268,13 @@ function LeadForm({ data, onChange, onSubmit, isPending, mode }: {
       <div className="space-y-3">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Pipeline</p>
         <Field label="Status">
-          <select value={(data.status as unknown as string) || 'New'} onChange={e => up({ status: e.target.value as any })} className={inputCls}>
+          <select
+            value={(data.status as unknown as string) || 'New'}
+            onChange={e => up({ status: e.target.value as any })}
+            className={inputCls}
+            disabled={isStatusLocked}
+            title={isStatusLocked ? 'Lost leads cannot change status' : undefined}
+          >
             <option value="New">New</option>
             <option value="Demo">Demo</option>
             <option value="Converted">Converted</option>
@@ -627,6 +634,8 @@ export default function LeadsPage() {
                   const ratingStr = getRatingDisplay(lead.rating);
                   const sourceStr = getSourceDisplay(lead.leadSource);
                   const isConverted = statusStr === 'Converted';
+                  const isLost = statusStr === 'Lost';
+                  const isConvertDisabled = isConverted || isLost;
                   return (
                     <tr key={lead.leadId} className="group hover:bg-gray-50/70 transition-colors">
                       <td className="px-5 py-4">
@@ -665,9 +674,9 @@ export default function LeadsPage() {
                           </button>
                           <button
                             onClick={() => openConvertModal(lead)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors font-bold ${isConverted ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700/40 dark:text-gray-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'}`}
-                            title={isConverted ? "Already converted" : "Convert to Customer"}
-                            disabled={isConverted || convertMutation.isPending}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors font-bold ${isConvertDisabled ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700/40 dark:text-gray-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'}`}
+                            title={isConverted ? "Already converted" : isLost ? "Lost leads cannot be converted" : "Convert to Customer"}
+                            disabled={isConvertDisabled || convertMutation.isPending}
                           >
                             <UserPlus className="w-4 h-4" />
                           </button>

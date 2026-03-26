@@ -431,7 +431,7 @@ public class ExportController : ControllerBase
 
         rows.AddRange(orders.Select(o =>
         {
-            var earning = (o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
+            var earning = (o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.PaymentReceived)
                 ? Math.Round(o.TotalAmount * commissionRate / 100m, 2)
                 : 0m;
 

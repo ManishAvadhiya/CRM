@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '@/services';
 import { formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { Customer, CustomerType } from '@/types';
 import {
   Users,
@@ -196,6 +197,7 @@ export default function CustomersPage() {
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
+  const [showThisMonthOnly, setShowThisMonthOnly] = useState(false);
   const [formData, setFormData] = useState<Partial<Customer>>(EMPTY_FORM);
 
   const { data: customers, isLoading } = useQuery({
@@ -233,6 +235,12 @@ export default function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       setDeleteTarget(null);
+      toast.success('Customer deleted successfully');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to delete customer';
+      toast.error(message);
+      setDeleteTarget(null);
     },
   });
 
@@ -253,6 +261,13 @@ export default function CustomersPage() {
   const filtered = useMemo(() => {
     if (!customers) return [];
     let list = customers;
+    if (showThisMonthOnly) {
+      const now = new Date();
+      list = list.filter(c => {
+        const d = new Date(c.createdAt);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+    }
     if (typeFilter) {
       const val = typeFilter === 'Business' ? 1 : 0;
       list = list.filter(c => c.customerType === val || c.customerType === typeFilter);
@@ -267,7 +282,7 @@ export default function CustomersPage() {
       );
     }
     return list;
-  }, [customers, typeFilter, search]);
+  }, [customers, typeFilter, search, showThisMonthOnly]);
 
   const pagination = usePagination(filtered, 10);
 
@@ -287,10 +302,10 @@ export default function CustomersPage() {
   };
 
   const statCards = [
-    { label: 'Total Customers', value: stats.total,      icon: Users,     color: 'text-indigo-600', bg: 'bg-indigo-50',   active: typeFilter === undefined,   onClick: () => setTypeFilter(undefined) },
-    { label: 'Business',        value: stats.business,   icon: Store,     color: 'text-blue-600',   bg: 'bg-blue-50',     active: typeFilter === 'Business',   onClick: () => setTypeFilter(t => t === 'Business'   ? undefined : 'Business') },
-    { label: 'Individual',      value: stats.individual, icon: UserCircle,color: 'text-violet-600', bg: 'bg-violet-50',   active: typeFilter === 'Individual', onClick: () => setTypeFilter(t => t === 'Individual' ? undefined : 'Individual') },
-    { label: 'New This Month',  value: stats.thisMonth,  icon: Building2, color: 'text-emerald-600',bg: 'bg-emerald-50',  active: false,                      onClick: undefined },
+    { label: 'Total Customers', value: stats.total,      icon: Users,     color: 'text-indigo-600', bg: 'bg-indigo-50',   active: typeFilter === undefined && !showThisMonthOnly,   onClick: () => { setTypeFilter(undefined); setShowThisMonthOnly(false); } },
+    { label: 'Business',        value: stats.business,   icon: Store,     color: 'text-blue-600',   bg: 'bg-blue-50',     active: typeFilter === 'Business' && !showThisMonthOnly,   onClick: () => { setTypeFilter(t => t === 'Business'   ? undefined : 'Business'); setShowThisMonthOnly(false); } },
+    { label: 'Individual',      value: stats.individual, icon: UserCircle,color: 'text-violet-600', bg: 'bg-violet-50',   active: typeFilter === 'Individual' && !showThisMonthOnly, onClick: () => { setTypeFilter(t => t === 'Individual' ? undefined : 'Individual'); setShowThisMonthOnly(false); } },
+    { label: 'New This Month',  value: stats.thisMonth,  icon: Building2, color: 'text-emerald-600',bg: 'bg-emerald-50',  active: showThisMonthOnly,                      onClick: () => { setShowThisMonthOnly(prev => !prev); setTypeFilter(undefined); } },
   ];
 
   if (isLoading) {

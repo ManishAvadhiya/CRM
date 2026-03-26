@@ -221,42 +221,16 @@ export function AccountDetailsPage() {
               </span>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Download your full CRM profile as a ZIP containing CSV files (leads, customers, orders, subscriptions, products, earnings) with preset headers for your target CRM.
+              Download your full CRM profile as a ZIP containing CSV files (leads, customers, orders, subscriptions, products, earnings).
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                onClick={() => handleExportProfile('generic')}
-                disabled={exportingPreset !== null}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-gray-800 hover:bg-gray-900 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {exportingPreset === 'generic' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {exportingPreset === 'generic' ? 'Exporting Generic...' : 'Export Generic CSV'}
-              </button>
-              <button
-                onClick={() => handleExportProfile('zoho')}
-                disabled={exportingPreset !== null}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {exportingPreset === 'zoho' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {exportingPreset === 'zoho' ? 'Exporting Zoho...' : 'Export Zoho Preset'}
-              </button>
-              <button
-                onClick={() => handleExportProfile('hubspot')}
-                disabled={exportingPreset !== null}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {exportingPreset === 'hubspot' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {exportingPreset === 'hubspot' ? 'Exporting HubSpot...' : 'Export HubSpot Preset'}
-              </button>
-              <button
-                onClick={() => handleExportProfile('salesforce')}
-                disabled={exportingPreset !== null}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-blue-700 hover:bg-blue-800 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {exportingPreset === 'salesforce' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {exportingPreset === 'salesforce' ? 'Exporting Salesforce...' : 'Export Salesforce Preset'}
-              </button>
-            </div>
+            <button
+              onClick={() => handleExportProfile('generic')}
+              disabled={exportingPreset !== null}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            >
+              {exportingPreset === 'generic' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {exportingPreset === 'generic' ? 'Exporting...' : 'Export Data'}
+            </button>
           </div>
         )}
 

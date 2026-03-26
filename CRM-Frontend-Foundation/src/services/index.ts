@@ -16,6 +16,18 @@ import type {
   UpdateActivityRequest,
   User,
   PartnerEarning,
+  AdvancedDashboardStats,
+  RevenueAnalytics,
+  CustomerAnalytics,
+  SalesPipeline,
+  ProductAnalytics,
+  PartnerPerformance,
+  SubscriptionAnalytics,
+  ActivityAnalytics,
+  GeographicAnalytics,
+  TimeBasedAnalytics,
+  FinancialHealth,
+  DashboardAlerts,
 } from '@/types';
 
 // Customers API
@@ -89,6 +101,13 @@ export const ordersApi = {
   confirm: async (id: number) => {
     const { data } = await apiClient.put<ApiResponse<Subscription>>(
       `/orders/${id}/confirm`
+    );
+    return data.data;
+  },
+
+  cancel: async (id: number) => {
+    const { data } = await apiClient.put<ApiResponse<Order>>(
+      `/orders/${id}/cancel`
     );
     return data.data;
   },
@@ -202,6 +221,90 @@ export const dashboardApi = {
     const { data } = await apiClient.get<ApiResponse<Activity[]>>(
       '/dashboard/recent-activities',
       { params: { count } }
+    );
+    return data.data;
+  },
+
+  getAdvancedStats: async () => {
+    const { data } = await apiClient.get<ApiResponse<AdvancedDashboardStats>>(
+      '/dashboard/advanced-stats'
+    );
+    return data.data;
+  },
+
+  getRevenueAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<RevenueAnalytics>>(
+      '/dashboard/revenue-analytics'
+    );
+    return data.data;
+  },
+
+  getCustomerAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<CustomerAnalytics>>(
+      '/dashboard/customer-analytics'
+    );
+    return data.data;
+  },
+
+  getSalesPipeline: async () => {
+    const { data } = await apiClient.get<ApiResponse<SalesPipeline>>(
+      '/dashboard/sales-pipeline'
+    );
+    return data.data;
+  },
+
+  getProductAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<ProductAnalytics>>(
+      '/dashboard/product-analytics'
+    );
+    return data.data;
+  },
+
+  getPartnerPerformance: async () => {
+    const { data } = await apiClient.get<ApiResponse<PartnerPerformance>>(
+      '/dashboard/partner-performance'
+    );
+    return data.data;
+  },
+
+  getSubscriptionAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<SubscriptionAnalytics>>(
+      '/dashboard/subscription-analytics'
+    );
+    return data.data;
+  },
+
+  getActivityAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<ActivityAnalytics>>(
+      '/dashboard/activity-analytics'
+    );
+    return data.data;
+  },
+
+  getGeographicAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<GeographicAnalytics>>(
+      '/dashboard/geographic-analytics'
+    );
+    return data.data;
+  },
+
+  getTimeBasedAnalytics: async () => {
+    const { data } = await apiClient.get<ApiResponse<TimeBasedAnalytics>>(
+      '/dashboard/time-based-analytics'
+    );
+    return data.data;
+  },
+
+  getFinancialHealth: async () => {
+    const { data } = await apiClient.get<ApiResponse<FinancialHealth>>(
+      '/dashboard/financial-health'
+    );
+    return data.data;
+  },
+
+  getAlerts: async () => {
+    const { data } = await apiClient.get<ApiResponse<DashboardAlerts>>(
+      '/dashboard/alerts'
     );
     return data.data;
   },

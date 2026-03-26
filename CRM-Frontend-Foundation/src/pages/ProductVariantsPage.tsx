@@ -3,9 +3,19 @@ import { useQuery } from '@tanstack/react-query';
 import { productVariantsApi } from '@/services';
 import { formatCurrency } from '@/lib/utils';
 import type { ProductVariant } from '@/types';
-import { Package, ChevronRight, X } from 'lucide-react';
+import { Package, ChevronRight, X, CheckCircle, Sparkles } from 'lucide-react';
 
 function DetailPanel({ variant, onClose }: { variant: ProductVariant; onClose: () => void }) {
+  // Try to parse features as JSON, fallback to plain text
+  let parsedFeatures: { included?: string[]; highlights?: string[]; limitations?: string[] } | null = null;
+  try {
+    if (variant.features && typeof variant.features === 'string' && variant.features.trim().startsWith('{')) {
+      parsedFeatures = JSON.parse(variant.features);
+    }
+  } catch (e) {
+    // If parsing fails, will render as plain text
+  }
+
   return (
     <>
       <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose} />
@@ -49,8 +59,56 @@ function DetailPanel({ variant, onClose }: { variant: ProductVariant; onClose: (
           </div>
           {variant.features && (
             <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Features</p>
-              <p className="text-sm text-gray-700 leading-relaxed">{variant.features}</p>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Features</p>
+              {parsedFeatures ? (
+                <div className="space-y-4">
+                  {parsedFeatures.highlights && parsedFeatures.highlights.length > 0 && (
+                    <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                      {parsedFeatures.highlights.map((highlight, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <Sparkles className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-indigo-700 font-semibold">{highlight}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {parsedFeatures.included && parsedFeatures.included.length > 0 && (
+                    <div className="space-y-2">
+                      {parsedFeatures.included.map((feature, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-700">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {parsedFeatures.limitations && parsedFeatures.limitations.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Limitations</p>
+                      {parsedFeatures.limitations.map((limit, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 mt-0.5 flex-shrink-0" />
+                          <span className="text-xs text-gray-500">{limit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {variant.features
+                    .replace(/[\[\]"]/g, '')
+                    .split(/[,;\n|]+/)
+                    .map(f => f.trim())
+                    .filter(f => f.length > 0)
+                    .map((feature, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,0 +1,14 @@
+Additional work completed beyond core CRM basics:
+
+1. Role-based access control (Management Admin, Marketing, Partner) with protected APIs and role-specific views.
+2. JWT authentication upgraded with refresh-token flow (cookie-based token rotation).
+3. OTP + email-based password reset flow with expiry validation.
+4. Full order management module (new/renewal orders, payment status, pricing, discount/tax handling).
+5. Subscription lifecycle management (active/expired/cancelled/suspended/pending renewal) with renewal tracking.
+6. Subscription history + lead history audit tables for change tracking.
+7. Activity management module for calls/emails/meetings/tasks with status and priority.
+8. Notification system (in-app + email) plus background scheduler for renewal reminders.
+9. Product variant catalog with pricing model (single-user/multi-user and annual fee).
+10. Advanced analytics dashboards (revenue, subscription health, customer trends, partner performance, commissions).
+11. Partner-focused export/reporting (CSV/ZIP exports with CRM import presets).
+12. Extended customer/account fields (billing details, owner mapping, business metadata).

@@ -358,7 +358,6 @@ export default function SubscriptionsPage() {
     totalRevenue: subscriptions.reduce((sum, s) => sum + (s.annualFee || 0), 0),
     activeCount: subscriptions.filter(s => getSubscriptionStatusString(s.status ?? 0) === 'Active').length,
     renewalCount: upcomingRenewals.length,
-    churnRisk: subscriptions.filter(s => !s.autoRenew).length,
   }), [subscriptions, upcomingRenewals]);
 
   const pagination = usePagination(subscriptions, 10);
@@ -483,12 +482,11 @@ export default function SubscriptionsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { label: 'Annual Revenue', value: formatCurrency(stats.totalRevenue), icon: TrendingUp, accent: 'bg-indigo-50 text-indigo-600' },
             { label: 'Active', value: stats.activeCount, icon: CheckCircle, accent: 'bg-emerald-50 text-emerald-600' },
             { label: 'Upcoming Renewals', value: stats.renewalCount, icon: Clock, accent: 'bg-amber-50 text-amber-600' },
-            { label: 'Churn Risk', value: stats.churnRisk, icon: AlertCircle, accent: 'bg-red-50 text-red-600' },
           ].map(({ label, value, icon: Icon, accent }) => (
             <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${accent}`}>

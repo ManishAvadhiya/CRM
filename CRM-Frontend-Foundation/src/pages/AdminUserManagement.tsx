@@ -99,6 +99,73 @@ function CredentialsModal({ credentials, onClose }: { credentials: any; onClose:
 
 const FILTER_ROLES = ['All', 'Marketing', 'Partner', 'ManagementAdmin'];
 
+interface UserFormFieldsProps {
+  isEdit: boolean;
+  formData: FormData;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  showPassword: boolean;
+  setShowPassword: React.Dispatch<React.SetStateAction<boolean>>;
+  handleEditSubmit: (e: React.FormEvent) => void;
+  handleCreateSubmit: (e: React.FormEvent) => void;
+  createMutation: { isPending: boolean };
+  updateMutation: { isPending: boolean };
+  onCancel: () => void;
+}
+
+function UserFormFields({
+  isEdit,
+  formData,
+  setFormData,
+  showPassword,
+  setShowPassword,
+  handleEditSubmit,
+  handleCreateSubmit,
+  createMutation,
+  updateMutation,
+  onCancel
+}: UserFormFieldsProps) {
+  return (
+    <form onSubmit={isEdit ? handleEditSubmit : handleCreateSubmit} className="space-y-4">
+      <Field label="Full Name" required>
+        <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={inputCls} required />
+      </Field>
+      <Field label="Email" required>
+        <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className={`${inputCls} ${isEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`} disabled={isEdit} required />
+        {isEdit && <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>}
+      </Field>
+      <Field label="Phone">
+        <input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className={inputCls} />
+      </Field>
+      {!isEdit && (
+        <>
+          <Field label="Password" required>
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} className={inputCls} placeholder="Min. 6 characters" required />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </Field>
+          <Field label="Role" required>
+            <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as 'Marketing' | 'Partner' })} className={inputCls}>
+              <option value="Marketing">Marketing</option>
+              <option value="Partner">Partner</option>
+            </select>
+          </Field>
+        </>
+      )}
+      <div className="flex gap-2 pt-2">
+        <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+          {(createMutation.isPending || updateMutation.isPending) ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create User')}
+        </button>
+        <button type="button" onClick={onCancel} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors">
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function AdminUserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('All');
@@ -177,48 +244,14 @@ export default function AdminUserManagement() {
     return m[role] || 'bg-gray-100 text-gray-600 border-gray-200';
   };
 
-  if (error) return <div className="p-6 text-sm text-red-600 bg-red-50 rounded-2xl m-6">Error loading users.</div>;
+  const handleCancelForm = () => {
+    setIsCreateOpen(false);
+    setIsEditOpen(false);
+    setEditingUserId(null);
+    setFormData({ name: '', email: '', phone: '', password: '', role: 'Marketing' });
+  };
 
-  const UserFormFields = ({ isEdit }: { isEdit: boolean }) => (
-    <form onSubmit={isEdit ? handleEditSubmit : handleCreateSubmit} className="space-y-4">
-      <Field label="Full Name" required>
-        <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={inputCls} required />
-      </Field>
-      <Field label="Email" required>
-        <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className={`${inputCls} ${isEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`} disabled={isEdit} required />
-        {isEdit && <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>}
-      </Field>
-      <Field label="Phone">
-        <input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className={inputCls} />
-      </Field>
-      {!isEdit && (
-        <>
-          <Field label="Password" required>
-            <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} className={inputCls} placeholder="Min. 6 characters" required />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </Field>
-          <Field label="Role" required>
-            <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as 'Marketing' | 'Partner' })} className={inputCls}>
-              <option value="Marketing">Marketing</option>
-              <option value="Partner">Partner</option>
-            </select>
-          </Field>
-        </>
-      )}
-      <div className="flex gap-2 pt-2">
-        <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-          {(createMutation.isPending || updateMutation.isPending) ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create User')}
-        </button>
-        <button type="button" onClick={() => { setIsCreateOpen(false); setIsEditOpen(false); setEditingUserId(null); setFormData({ name: '', email: '', phone: '', password: '', role: 'Marketing' }); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors">
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
+  if (error) return <div className="p-6 text-sm text-red-600 bg-red-50 rounded-2xl m-6">Error loading users.</div>;
 
   return (
     <div className="bg-gray-50 min-h-screen p-6 lg:p-8">
@@ -226,10 +259,32 @@ export default function AdminUserManagement() {
       {deleteUser && <DeleteModal user={deleteUser} onConfirm={() => deleteMutation.mutate(deleteUser.userId)} onCancel={() => setDeleteUser(null)} isPending={deleteMutation.isPending} />}
 
       <SlidePanel open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create User" subtitle="Add a new team member">
-        <UserFormFields isEdit={false} />
+        <UserFormFields
+          isEdit={false}
+          formData={formData}
+          setFormData={setFormData}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          handleEditSubmit={handleEditSubmit}
+          handleCreateSubmit={handleCreateSubmit}
+          createMutation={createMutation}
+          updateMutation={updateMutation}
+          onCancel={handleCancelForm}
+        />
       </SlidePanel>
       <SlidePanel open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit User" subtitle={formData.name}>
-        <UserFormFields isEdit={true} />
+        <UserFormFields
+          isEdit={true}
+          formData={formData}
+          setFormData={setFormData}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          handleEditSubmit={handleEditSubmit}
+          handleCreateSubmit={handleCreateSubmit}
+          createMutation={createMutation}
+          updateMutation={updateMutation}
+          onCancel={handleCancelForm}
+        />
       </SlidePanel>
 
       <div className="space-y-6">

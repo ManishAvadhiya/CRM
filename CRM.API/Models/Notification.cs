@@ -54,6 +54,7 @@ public enum NotificationType
     FollowUpDue,
     OrderCreated,
     OrderConfirmed,
+    OrderCancelled,
     PaymentReceived,
     SubscriptionCreated,
     SubscriptionRenewalDue,

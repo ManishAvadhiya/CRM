@@ -7,6 +7,7 @@ import { useAuthStore } from './store/authStore';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
+import AdvancedDashboardPage from './pages/AdvancedDashboardPage.tsx';
 import LeadsPage from './pages/LeadsPage.tsx';
 import CustomersPage from './pages/CustomersPage.tsx';
 import OrdersPage from './pages/OrdersPage.tsx';
@@ -28,6 +29,8 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
+      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes by default
+      gcTime: 15 * 60 * 1000, // Cache data for 15 minutes by default
     },
   },
 });
@@ -59,14 +62,26 @@ function RoleBasedRoute({ children, allowedRoles }: { children: React.ReactNode;
 
 function UserManagementWrapper() {
   const user = useAuthStore((state) => state.user);
-  
+
   if (user?.role === 'ManagementAdmin') {
     return <AdminUserManagement />;
   } else if (user?.role === 'Marketing') {
     return <MarketingUserManagement />;
   }
-  
+
   return <Navigate to="/" replace />;
+}
+
+function RoleBasedDashboard() {
+  const user = useAuthStore((state) => state.user);
+
+  // Admin and Marketing users see Analytics as their dashboard
+  if (user?.role === 'ManagementAdmin' || user?.role === 'Marketing') {
+    return <AdvancedDashboardPage />;
+  }
+
+  // Partner users see normal dashboard
+  return <DashboardPage />;
 }
 
 function App() {
@@ -75,7 +90,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* <Route path="/" element={<LandingPage />} /> */}
           <Route path="/login" element={<LoginPage />} />
           
           {/* Protected Dashboard Routes */}
@@ -87,7 +102,7 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<DashboardPage />} />
+            <Route index element={<RoleBasedDashboard />} />
             <Route path="leads" element={<LeadsPage />} />
             <Route path="leads/:id" element={<LeadDetailPage />} />
             <Route path="customers" element={<CustomersPage />} />

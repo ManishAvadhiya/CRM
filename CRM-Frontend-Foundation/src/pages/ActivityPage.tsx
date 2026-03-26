@@ -7,7 +7,6 @@ import type { ActivityListItem, ActivityType, ActivityPriority, ActivityStatus }
 import {
   Plus,
   Search,
-  Edit,
   Trash2,
   Phone,
   Mail,
@@ -25,8 +24,6 @@ const ACTIVITY_TYPES_DATA = [
   { type: 'Call', icon: Phone, color: 'bg-blue-500', label: 'Calls' },
   { type: 'Email', icon: Mail, color: 'bg-purple-500', label: 'Emails' },
   { type: 'Meeting', icon: Users, color: 'bg-green-500', label: 'Meetings' },
-  { type: 'Task', icon: CheckCircle, color: 'bg-yellow-500', label: 'Tasks' },
-  { type: 'Note', icon: AlertCircle, color: 'bg-orange-500', label: 'Notes' },
 ];
 
 function getActivityTypeIcon(type: ActivityType | number) {
@@ -198,10 +195,15 @@ export default function ActivityPage() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: () =>
-      activitiesApi.create({
-        relatedToType: createForm.relatedToType === 'Lead' ? 0 : 1,
-        relatedToId: Number(createForm.relatedToId),
+    mutationFn: () => {
+      // Determine relatedToType automatically based on whether ID is in customers or leads
+      const selectedId = Number(createForm.relatedToId);
+      const isLead = leads?.some(l => l.leadId === selectedId);
+      const relatedToType = isLead ? 0 : 1; // 0 = Lead, 1 = Customer
+
+      return activitiesApi.create({
+        relatedToType,
+        relatedToId: selectedId,
         activityType: ActivityTypeMap[createForm.activityType] ?? 0,
         description: createForm.description.trim(),
         outcome: createForm.outcome.trim() || undefined,
@@ -211,7 +213,8 @@ export default function ActivityPage() {
           : undefined,
         status: 0,
         priority: 1,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
       setShowCreateForm(false);
@@ -419,13 +422,6 @@ export default function ActivityPage() {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            disabled
-                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-100 text-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Edit activity"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
                             onClick={() => setDeleteActivity(activity)}
                             className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors font-bold"
                             title="Delete activity"
@@ -457,112 +453,112 @@ export default function ActivityPage() {
         onClose={() => setShowCreateForm(false)}
         title="Create Activity"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name Source</label>
-            <select
-              value={createForm.relatedToType}
-              onChange={(e) =>
-                setCreateForm((prev) => ({
-                  ...prev,
-                  relatedToType: e.target.value,
-                  relatedToId: '',
-                }))
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            >
-              <option value="Lead">Lead</option>
-              <option value="Customer">Customer</option>
-            </select>
-          </div>
+        <div className="space-y-6">
+          {/* Basic Information Section */}
+          <section className="space-y-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Basic Information</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Name <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={createForm.relatedToId}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, relatedToId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                >
+                  <option value="">Select customer or lead</option>
+                  {[...(customers ?? []).map(c => ({ id: c.customerId, label: `${c.companyName} (${c.contactPerson})`, type: 'Customer' })),
+                     ...(leads ?? []).map(l => ({ id: l.leadId, label: `${l.companyName} (${l.contactName})`, type: 'Lead' }))
+                  ].map((entity) => (
+                    <option key={`${entity.type}-${entity.id}`} value={entity.id}>
+                      {entity.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
-            <select
-              value={createForm.relatedToId}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, relatedToId: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            >
-              <option value="">Select Name</option>
-              {relatedEntityOptions.map((entity) => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Type <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={createForm.activityType}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, activityType: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                >
+                  <option value="Call">Call</option>
+                  <option value="Email">Email</option>
+                  <option value="Meeting">Meeting</option>
+                </select>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
-            <select
-              value={createForm.activityType}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, activityType: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            >
-              <option value="Call">Call</option>
-              <option value="Email">Email</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Task">Task</option>
-              <option value="Note">Note</option>
-            </select>
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Date <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={createForm.activityDate}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, activityDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Date</label>
-            <input
-              type="datetime-local"
-              value={createForm.activityDate}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, activityDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Next Follow-up</label>
+                <input
+                  type="datetime-local"
+                  value={createForm.nextFollowUp}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, nextFollowUp: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </section>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Next Follow-up</label>
-            <input
-              type="datetime-local"
-              value={createForm.nextFollowUp}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, nextFollowUp: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-            />
-          </div>
+          {/* Details Section */}
+          <section className="space-y-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Details</p>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Outcome</label>
-            <input
-              type="text"
-              value={createForm.outcome}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, outcome: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              placeholder="Interested / Callback required / Closed"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Description <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={createForm.description}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                rows={3}
+                placeholder="Write activity notes..."
+              />
+            </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
-            <textarea
-              value={createForm.description}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
-              rows={3}
-              placeholder="Write activity notes"
-            />
-          </div>
-        </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Outcome</label>
+              <input
+                type="text"
+                value={createForm.outcome}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, outcome: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                placeholder="Interested / Callback required / Closed"
+              />
+            </div>
+          </section>
 
-        <div className="mt-4 flex items-center gap-3">
+          {/* Submit Button */}
           <button
             onClick={handleCreateActivity}
             disabled={createMutation.isPending}
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60"
           >
-            {createMutation.isPending ? 'Saving...' : 'Save Activity'}
-          </button>
-          <button
-            onClick={() => setShowCreateForm(false)}
-            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200"
-          >
-            Cancel
+            {createMutation.isPending ? (
+              <><div className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Saving...</>
+            ) : (
+              <><Plus className="h-4 w-4" />Save Activity</>
+            )}
           </button>
         </div>
       </SlidePanel>

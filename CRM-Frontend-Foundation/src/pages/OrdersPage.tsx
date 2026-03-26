@@ -15,7 +15,7 @@ import {
 import type { Order, Subscription } from '@/types';
 import {
   ShoppingCart, Plus, Search, Eye, CheckCircle, XCircle, Clock,
-  Truck, FileText, X, ChevronRight, Filter, RefreshCw,
+  Truck, FileText, X, ChevronRight, Filter, RefreshCw, DollarSign,
 } from 'lucide-react';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationControls } from '@/components/ui/PaginationControls';
@@ -124,6 +124,7 @@ export default function OrdersPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
+  const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [dateFrom, setDateFrom] = useState('');
@@ -231,6 +232,16 @@ export default function OrdersPage() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => ordersApi.cancel(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      setCancelOrder(null);
+      setSelectedOrder(null);
+      setIsDetailOpen(false);
+    },
+  });
+
   const handleCreate = () => {
     if (renewalMode) {
       if (!selectedSubscription) {
@@ -288,6 +299,10 @@ export default function OrdersPage() {
     setConfirmOrder(order);
   };
 
+  const handleCancel = (order: Order) => {
+    setCancelOrder(order);
+  };
+
   const handleViewDetail = (order: Order) => {
     setSelectedOrder(order);
     setIsDetailOpen(true);
@@ -342,10 +357,10 @@ export default function OrdersPage() {
   const getStatusBadge = (status: number | string) => {
     const t = getOrderStatusString(status);
     const map: Record<string, { icon: React.ReactNode; cls: string }> = {
-      Delivered: { icon: <Truck className="w-3 h-3" />, cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+      PaymentReceived: { icon: <DollarSign className="w-3 h-3" />, cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
       Confirmed: { icon: <CheckCircle className="w-3 h-3" />, cls: 'bg-blue-50 text-blue-700 border border-blue-200' },
       Pending:   { icon: <Clock className="w-3 h-3" />,       cls: 'bg-amber-50 text-amber-700 border border-amber-200' },
-      Cancelled: { icon: <XCircle className="w-3 h-3" />,     cls: 'bg-red-50 text-red-700 border border-red-200' },
+      Cancelled: { icon: <XCircle className="w-3 h-3" />, cls: 'bg-red-50 text-red-700 border border-red-200' },
     };
     const d = map[t] || { icon: <FileText className="w-3 h-3" />, cls: 'bg-gray-50 text-gray-600 border border-gray-200' };
     return (
@@ -371,7 +386,7 @@ export default function OrdersPage() {
 
   const isNonEditable = (status: number | string) => {
     const t = getOrderStatusString(status);
-    return t === 'Confirmed' || t === 'Delivered' || t === 'Cancelled';
+    return t === 'Confirmed' || t === 'PaymentReceived' || t === 'Cancelled';
   };
 
   return (
@@ -414,7 +429,7 @@ export default function OrdersPage() {
                   <option value="">All Statuses</option>
                   <option value="Pending">Pending</option>
                   <option value="Confirmed">Confirmed</option>
-                  <option value="Delivered">Delivered</option>
+                  <option value="PaymentReceived">Payment Received</option>
                   <option value="Cancelled">Cancelled</option>
                 </select>
               </div>
@@ -575,14 +590,24 @@ export default function OrdersPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
                         {!isNonEditable(order.status) && (
-                          <button
-                            onClick={() => handleConfirm(order)}
-                            disabled={confirmMutation.isPending}
-                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors font-bold"
-                            title="Confirm Order"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleConfirm(order)}
+                              disabled={confirmMutation.isPending}
+                              className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors font-bold"
+                              title="Confirm Order"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleCancel(order)}
+                              disabled={cancelMutation.isPending}
+                              className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-300 transition-colors font-bold"
+                              title="Cancel Order"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={() => handleViewDetail(order)}
@@ -1042,14 +1067,24 @@ export default function OrdersPage() {
             )}
 
             {!isNonEditable(selectedOrder.status) && (
-              <button
-                onClick={() => handleConfirm(selectedOrder)}
-                disabled={confirmMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {confirmMutation.isPending ? 'Confirming...' : 'Confirm Order & Create Subscription'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleConfirm(selectedOrder)}
+                  disabled={confirmMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {confirmMutation.isPending ? 'Confirming...' : 'Confirm'}
+                </button>
+                <button
+                  onClick={() => handleCancel(selectedOrder)}
+                  disabled={cancelMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                  {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -1071,6 +1106,24 @@ export default function OrdersPage() {
         onConfirm={() => {
           if (confirmOrder) {
             confirmMutation.mutate(confirmOrder.orderId);
+          }
+        }}
+      />
+
+      <ConfirmActionModal
+        open={cancelOrder !== null}
+        title="Cancel Order"
+        message={
+          cancelOrder
+            ? `Cancel ${cancelOrder.orderNumber}? This action cannot be undone.`
+            : 'Cancel selected order?'
+        }
+        confirmText="Cancel Order"
+        isLoading={cancelMutation.isPending}
+        onCancel={() => setCancelOrder(null)}
+        onConfirm={() => {
+          if (cancelOrder) {
+            cancelMutation.mutate(cancelOrder.orderId);
           }
         }}
       />

@@ -136,7 +136,7 @@ public class OrdersController : ControllerBase
                     OrderAmount = o.TotalAmount,
                     Status = o.Status.ToString(),
                     CommissionRate = commissionRate,
-                    EarningAmount = (o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Delivered)
+                    EarningAmount = (o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.PaymentReceived)
                         ? Math.Round(o.TotalAmount * commissionRate / 100m, 2)
                         : 0m
                 })
@@ -466,6 +466,68 @@ public class OrdersController : ControllerBase
         {
             _logger.LogError($"Error confirming order: {ex.Message}");
             return StatusCode(500, ApiResponse<Subscription>.ErrorResponse("Error confirming order"));
+        }
+    }
+
+    [HttpPut("{id}/cancel")]
+    public async Task<ActionResult<ApiResponse<Order>>> CancelOrder(int id)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var order = await _context.Orders
+                .Include(o => o.Customer)
+                    .ThenInclude(c => c.AccountOwnerUser)
+                .FirstOrDefaultAsync(o => o.OrderId == id);
+
+            if (order == null)
+            {
+                return NotFound(ApiResponse<Order>.ErrorResponse("Order not found"));
+            }
+
+            if (order.Status == OrderStatus.Cancelled)
+            {
+                return BadRequest(ApiResponse<Order>.ErrorResponse("Order already cancelled"));
+            }
+
+            if (order.Status == OrderStatus.Confirmed || order.Status == OrderStatus.PaymentReceived)
+            {
+                return BadRequest(ApiResponse<Order>.ErrorResponse("Cannot cancel a confirmed order"));
+            }
+
+            if (userRole == "Partner" && order.CreatedBy != currentUserId)
+            {
+                return Forbid();
+            }
+
+            // Update order status
+            order.Status = OrderStatus.Cancelled;
+            order.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            // Send notification - to AccountOwner if set, otherwise to the user cancelling the order
+            var notifyUserId = order.Customer?.AccountOwner ?? currentUserId;
+            await _notificationService.CreateNotificationAsync(
+                notifyUserId,
+                NotificationType.OrderCancelled,
+                "Order Cancelled",
+                $"Order {order.OrderNumber} has been cancelled",
+                RelatedToType.Order,
+                order.OrderId,
+                sendEmail: true
+            );
+
+            _logger.LogInformation($"Order cancelled: Order {order.OrderId}");
+
+            return Ok(ApiResponse<Order>.SuccessResponse(order, "Order cancelled successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error cancelling order: {ex.Message}");
+            return StatusCode(500, ApiResponse<Order>.ErrorResponse("Error cancelling order"));
         }
     }
 }

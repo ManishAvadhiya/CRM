@@ -181,8 +181,10 @@ public class CustomersController : ControllerBase
             var currentUserId = GetCurrentUserId();
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            var customer = await _context.Customers.FindAsync(id);
-            
+            var customer = await _context.Customers
+                .Include(c => c.Subscriptions)
+                .FirstOrDefaultAsync(c => c.CustomerId == id);
+
             if (customer == null)
             {
                 return NotFound(ApiResponse<bool>.ErrorResponse("Customer not found"));
@@ -193,10 +195,23 @@ public class CustomersController : ControllerBase
                 return Forbid();
             }
 
+            // Check for active or suspended subscriptions
+            var activeSubscriptions = customer.Subscriptions?
+                .Where(s => !s.IsDeleted && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Suspended))
+                .ToList();
+
+            if (activeSubscriptions?.Any() == true)
+            {
+                var subNumbers = string.Join(", ", activeSubscriptions.Select(s => s.SubscriptionNumber));
+                return BadRequest(ApiResponse<bool>.ErrorResponse(
+                    $"Cannot delete customer with active subscriptions: {subNumbers}. Please cancel these subscriptions first or wait until they expire."
+                ));
+            }
+
             // Soft delete
             customer.IsDeleted = true;
             customer.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation($"Customer deleted: {customer.CustomerId}");

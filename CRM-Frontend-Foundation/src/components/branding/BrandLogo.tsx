@@ -17,7 +17,7 @@ export function BrandLogo({
       </div>
       {!compact && (
         <span className={cn('text-xl font-bold text-gray-900 tracking-tight', textClassName)}>
-          Nex<span className="text-indigo-600">CRM</span>
+          Insight<span className="text-indigo-600">CRM</span>
         </span>
       )}
     </div>

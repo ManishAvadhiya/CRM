@@ -101,8 +101,8 @@ public enum OrderStatus
     Draft,
     Pending,
     Confirmed,
-    Delivered,
-    Cancelled
+    Cancelled,
+    PaymentReceived
 }
 
 public enum PaymentStatus

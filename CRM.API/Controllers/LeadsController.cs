@@ -172,6 +172,12 @@ public class LeadsController : ControllerBase
                 return Forbid();
             }
 
+            // Lost leads are terminal for status changes.
+            if (lead.Status == LeadStatus.Lost && updatedLead.Status != LeadStatus.Lost)
+            {
+                return BadRequest(ApiResponse<Lead>.ErrorResponse("Cannot change status after a lead is marked Lost"));
+            }
+
             // Update properties
             lead.CompanyName = updatedLead.CompanyName;
             lead.ContactName = updatedLead.ContactName;
@@ -257,6 +263,11 @@ public class LeadsController : ControllerBase
             if (lead.Status == LeadStatus.Converted)
             {
                 return BadRequest(ApiResponse<Customer>.ErrorResponse("Lead already converted"));
+            }
+
+            if (lead.Status == LeadStatus.Lost)
+            {
+                return BadRequest(ApiResponse<Customer>.ErrorResponse("Cannot convert a lost lead"));
             }
 
             // Create customer from lead
@@ -481,6 +492,11 @@ public class LeadsController : ControllerBase
             if (!Enum.TryParse<LeadStatus>(request.Status, out var newStatus))
             {
                 return BadRequest(ApiResponse<LeadHistoryDto>.ErrorResponse("Invalid lead status"));
+            }
+
+            if (lead.Status == LeadStatus.Lost && newStatus != LeadStatus.Lost)
+            {
+                return BadRequest(ApiResponse<LeadHistoryDto>.ErrorResponse("Cannot change status after a lead is marked Lost"));
             }
 
             var oldStatus = lead.Status.ToString();

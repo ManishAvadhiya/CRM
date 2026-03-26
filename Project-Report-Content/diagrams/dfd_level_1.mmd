@@ -1,50 +1,158 @@
-flowchart TD
-    partner[Partner User]
-    marketing[Marketing User]
-    admin[Management Admin]
-
-    p1((P1 Auth and Access Control))
-    p2((P2 Lead and Customer Management))
-    p3((P3 Order and Subscription Management))
-    p4((P4 Activity and Notification Management))
-    p5((P5 Dashboard and Export))
-
-    d1[(D1 User Data)]
-    d2[(D2 Lead Data)]
-    d3[(D3 Customer Data)]
-    d4[(D4 Order Data)]
-    d5[(D5 Subscription Data)]
-    d6[(D6 Activity Data)]
-    d7[(D7 Notification Data)]
-    d8[(D8 Product Variant Data)]
-    d9[(D9 History Data)]
-
-    partner --> p1
-    marketing --> p1
-    admin --> p1
-
-    p1 --> d1
-    d1 --> p1
-
-    p1 --> p2
-    p2 --> d2
-    p2 --> d3
-    p2 --> d9
-
-    p2 --> p3
-    p3 --> d4
-    p3 --> d5
-    p3 --> d8
-    p3 --> d9
-
-    p2 --> p4
-    p3 --> p4
-    p4 --> d6
-    p4 --> d7
-
-    p2 --> p5
-    p3 --> p5
-    p4 --> p5
-    p5 --> partner
-    p5 --> marketing
-    p5 --> admin
+flowchart TB
+    %% DFD Level 1 - Detailed Process Decomposition
+    %% CRM System: Lead, Customer, Order & Subscription Management
+    
+    %% External Entities
+    E1["💼 Sales Executive<br/>(Partner/Marketing/Admin)"]
+    E2["📧 Email Service"]
+    
+    %% Data Stores
+    D1[("D1: Users")]
+    D2[("D2: Leads")]
+    D3[("D3: LeadHistory")]
+    D4[("D4: Customers")]
+    D5[("D5: ProductVariants")]
+    D6[("D6: Orders")]
+    D7[("D7: Subscriptions")]
+    D8[("D8: SubscriptionHistory")]
+    D9[("D9: Activities")]
+    D10[("D10: Notifications")]
+    D11[("D11: PasswordReset/OTP")]
+    D12[("D12: Audit Trail")]
+    
+    %% Core Processes
+    P1["🔐 P1: Authentication<br/>& User Management"]
+    P2["📋 P2: Lead<br/>Management"]
+    P3["👤 P3: Customer<br/>Management"]
+    P4["📦 P4: Order<br/>Management"]
+    P5["🔄 P5: Subscription<br/>Management"]
+    P6["💳 P6: Product<br/>Variant Management"]
+    P7["🔔 P7: Activity & Event<br/>Tracking"]
+    P8["📬 P8: Notification<br/>Service"]
+    P9["📊 P9: Dashboard &<br/>Reporting"]
+    P10["💾 P10: Data Export<br/>& Reporting"]
+    P11["⏰ P11: Background<br/>Scheduler"]
+    
+    %% ===== AUTHENTICATION (P1) =====
+    E1 -->|"1.1: Login"| P1
+    P1 -->|"1.2: Token"| E1
+    P1 <-->|"1.3: User data"| D1
+    P1 <-->|"1.4: OTP"| D11
+    P1 -->|"1.5: OTP email"| E2
+    P1 -->|"1.6: Log login"| P7
+    
+    %% ===== LEAD MANAGEMENT (P2) =====
+    E1 -->|"2.1: Lead CRUD"| P2
+    P2 -->|"2.2: Lead data"| E1
+    P2 <-->|"2.3: Leads"| D2
+    P2 <-->|"2.4: Lead history"| D3
+    P2 -->|"2.5: Log activity"| P7
+    P2 -.->|"2.6: Read (Dashboard)"| P9
+    
+    %% ===== CUSTOMER MANAGEMENT (P3) =====
+    E1 -->|"3.1: Customer CRUD"| P3
+    P3 -->|"3.2: Customer data"| E1
+    P3 <-->|"3.3: Customers"| D4
+    P3 -->|"3.4: Log activity"| P7
+    P3 -.->|"3.5: Read (Dashboard)"| P9
+    
+    %% ===== ORDER MANAGEMENT (P4) =====
+    E1 -->|"4.1: Order CRUD"| P4
+    P4 -->|"4.2: Order data"| E1
+    P4 <-->|"4.3: Orders"| D6
+    P4 -->|"4.4: Create subscription"| P5
+    P4 -->|"4.5: Log activity"| P7
+    P4 -.->|"4.6: Read (Dashboard)"| P9
+    P4 -->|"4.7: Log event"| D9
+    
+    %% ===== SUBSCRIPTION MANAGEMENT (P5) =====
+    P4 -->|"5.1: New subscription"| P5
+    E1 -->|"5.2: Manage subs"| P5
+    P5 -->|"5.3: Subscription data"| E1
+    P5 <-->|"5.4: Subscriptions"| D7
+    P5 <-->|"5.5: Sub history"| D8
+    P5 -->|"5.6: Log activity"| P7
+    P5 -->|"5.7: Renewal event"| P7
+    P11 -->|"5.8: Check expiry"| P5
+    P5 -->|"5.9: Expiry alert"| P8
+    P5 -.->|"5.10: Read (Dashboard)"| P9
+    
+    %% ===== PRODUCT VARIANT (P6) =====
+    E1 -->|"6.1: View products"| P6
+    P6 -->|"6.2: Product data"| E1
+    P6 <-->|"6.3: ProductVariants"| D5
+    P4 -->|"6.4: Product price"| P6
+    
+    %% ===== ACTIVITY TRACKING (P7) =====
+    P1 -->|"7.1: Auth events"| P7
+    P2 -->|"7.2: Lead events"| P7
+    P3 -->|"7.3: Customer events"| P7
+    P4 -->|"7.4: Order events"| P7
+    P5 -->|"7.5: Sub events"| P7
+    P7 <-->|"7.6: Activity log"| D9
+    P7 -->|"7.7: Log audit"| D12
+    P7 -->|"7.8: Trigger notification"| P8
+    
+    %% ===== NOTIFICATION SERVICE (P8) =====
+    P7 -->|"8.1: Event"| P8
+    P5 -->|"8.2: Renewal event"| P8
+    P8 <-->|"8.3: Notifications"| D10
+    P8 -->|"8.4: Send email"| E2
+    P8 -->|"8.5: In-app notify"| E1
+    
+    %% ===== DASHBOARD (P9) =====
+    E1 -->|"9.1: View dashboard"| P9
+    P9 -->|"9.2: Stats & metrics"| E1
+    P9 -.->|"9.3: Read all data"| D2
+    P9 -.->|"9.4: Read"| D3
+    P9 -.->|"9.5: Read"| D4
+    P9 -.->|"9.6: Read"| D6
+    P9 -.->|"9.7: Read"| D7
+    P9 -.->|"9.8: Read"| D9
+    P9 -.->|"9.9: Commission calc"| D6
+    
+    %% ===== EXPORT (P10) =====
+    E1 -->|"10.1: Export profile"| P10
+    P10 -->|"10.2: ZIP file"| E1
+    P10 -.->|"10.3: Read leads"| D2
+    P10 -.->|"10.4: Read customers"| D4
+    P10 -.->|"10.5: Read orders"| D6
+    P10 -.->|"10.6: Read subs"| D7
+    P10 -.->|"10.7: Read products"| D5
+    P10 -.->|"10.8: CSV export"| D6
+    
+    %% ===== BACKGROUND SCHEDULER (P11) =====
+    P11 -->|"11.1: Hourly check"| P5
+    P5 -->|"11.2: Expiry data"| P11
+    P11 -->|"11.3: Trigger"| P8
+    
+    %% Styling - Processes
+    style P1 fill:#c8e6c9,stroke:#558b2f,stroke-width:2px
+    style P2 fill:#bbdefb,stroke:#0277bd,stroke-width:2px
+    style P3 fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+    style P4 fill:#f8bbd0,stroke:#c2185b,stroke-width:2px
+    style P5 fill:#d1c4e9,stroke:#5e35b1,stroke-width:2px
+    style P6 fill:#c5cae9,stroke:#3949ab,stroke-width:2px
+    style P7 fill:#ffccbc,stroke:#d84315,stroke-width:2px
+    style P8 fill:#b2dfdb,stroke:#00695c,stroke-width:2px
+    style P9 fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style P10 fill:#f0f4c3,stroke:#827717,stroke-width:2px
+    style P11 fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px
+    
+    %% Styling - Data Stores
+    style D1 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D2 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D3 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D4 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D5 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D6 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D7 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D8 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D9 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D10 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D11 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style D12 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    
+    %% Styling - External Entities
+    style E1 fill:#c8e6c9,stroke:#558b2f,stroke-width:2px
+    style E2 fill:#f1f8e9,stroke:#33691e,stroke-width:2px

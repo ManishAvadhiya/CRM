@@ -1,0 +1,26 @@
+flowchart LR
+    %% DFD Level 0 - Context Diagram
+    %% CRM System - Lead, Customer, Order & Subscription Management
+    
+    %% External Entities (Actors)
+    E1["💼 Sales Executive<br/>(Partner/Marketing/Admin)"]
+    E2["📧 Email Service<br/>SMTP Server"]
+    
+    %% Main Process
+    P["🏢 CRM System<br/>Lead & Subscription<br/>Management Platform"]
+    
+    %% Data Store
+    D[("💾 Database<br/>PostgreSQL")]
+    
+    %% Flows
+    E1 -->|"Create/Update leads,<br/>customers, orders,<br/>subscriptions"| P
+    P -->|"Lead, customer, order,<br/>subscription data &<br/>analytics"| E1
+    
+    P -->|"Email: password resets,<br/>notifications,<br/>renewals"| E2
+    
+    P ---|"Read/Write all data"| D
+    
+    style E1 fill:#c8e6c9,stroke:#558b2f,stroke-width:2px
+    style E2 fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    style P fill:#ffccbc,stroke:#d84315,stroke-width:3px
+    style D fill:#e0f2f1,stroke:#00695c,stroke-width:2px

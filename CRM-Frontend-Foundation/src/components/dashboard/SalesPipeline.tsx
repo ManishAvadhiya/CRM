@@ -152,7 +152,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Lost Opportunity Analysis" subtitle="Understanding why deals are lost">
+        {/* <DashboardCard title="Lost Opportunity Analysis" subtitle="Understanding why deals are lost">
           <div className="flex gap-4">
             <div className="w-1/2 h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -193,7 +193,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
               <p className="text-lg font-bold text-amber-700">{data.demoToConversionRate.toFixed(1)}%</p>
             </div>
           </div>
-        </DashboardCard>
+        </DashboardCard> */}
       </div>
     </div>
   );

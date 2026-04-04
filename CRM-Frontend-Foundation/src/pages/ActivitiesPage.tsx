@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Phone, Mail, Calendar, Plus, Trash2 } from 'lucide-react';
-import { activitiesApi, customersApi } from '@/services';
+import { activitiesApi } from '@/services';
 import { leadsApi } from '@/services/leadsService';
 import type { ActivityListItem, CreateActivityRequest } from '@/types';
 import { usePagination } from '@/hooks/usePagination';
@@ -25,7 +25,6 @@ const activityTypeReverseMap: Record<number, string> = {
 
 const relatedTypeMap: Record<string, number> = {
   Lead: 0,
-  Customer: 1,
 };
 
 const relatedTypeReverseMap: Record<number, string> = {
@@ -75,11 +74,6 @@ export default function ActivitiesPage() {
     queryFn: () => leadsApi.getAll(),
   });
 
-  const { data: customers } = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => customersApi.getAll(),
-  });
-
   const createMutation = useMutation({
     mutationFn: (payload: CreateActivityRequest) => activitiesApi.create(payload),
     onSuccess: () => {
@@ -105,12 +99,8 @@ export default function ActivitiesPage() {
   });
 
   const nameOptions = useMemo(() => {
-    if (formData.relatedToType === 'Lead') {
-      return (leads ?? []).map((lead) => ({ id: lead.leadId, label: `${lead.companyName} (${lead.contactName})` }));
-    }
-
-    return (customers ?? []).map((customer) => ({ id: customer.customerId, label: `${customer.companyName} (${customer.contactPerson})` }));
-  }, [formData.relatedToType, leads, customers]);
+    return (leads ?? []).map((lead) => ({ id: lead.leadId, label: `${lead.companyName} (${lead.contactName})` }));
+  }, [leads]);
 
   const filteredActivities = useMemo(() => {
     const list = activities ?? [];
@@ -170,7 +160,6 @@ export default function ActivitiesPage() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
                 >
                   <option value="Lead">Lead</option>
-                  <option value="Customer">Customer</option>
                 </select>
               </div>
 

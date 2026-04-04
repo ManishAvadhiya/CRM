@@ -63,8 +63,8 @@ const TABS: TabConfig[] = [
   { key: 'activities', label: 'Activities', icon: Activity },
   { key: 'geographic', label: 'Geographic', icon: MapPin },
   { key: 'time', label: 'Time Insights', icon: Calendar },
-  { key: 'financial', label: 'Financial', icon: CreditCard },
-  { key: 'alerts', label: 'Alerts', icon: Bell },
+  // { key: 'financial', label: 'Financial', icon: CreditCard },
+  // { key: 'alerts', label: 'Alerts', icon: Bell },
 ];
 
 function getWishMessage(name?: string) {
@@ -137,9 +137,9 @@ export default function AdvancedDashboardPage() {
             <RevenueAnalyticsSection data={advancedStats.revenue} />
             <CustomerAnalyticsSection data={advancedStats.customers} />
             <SalesPipelineSection data={advancedStats.pipeline} />
-            {advancedStats.alerts && (
-              <DashboardAlertsSection data={advancedStats.alerts} />
-            )}
+            {/* {advancedStats.alerts && ( */}
+              {/* <DashboardAlertsSection data={advancedStats.alerts} /> */}
+            {/* )} */}
           </div>
         );
       case 'revenue':

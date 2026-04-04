@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { activitiesApi, customersApi } from '@/services';
+import { activitiesApi } from '@/services';
 import { leadsApi } from '@/services/leadsService';
 import { formatDate } from '@/lib/utils';
 import type { ActivityListItem, ActivityType, ActivityPriority, ActivityStatus } from '@/types';
@@ -165,7 +165,6 @@ export default function ActivityPage() {
   const [selectedActivity, setSelectedActivity] = useState<ActivityListItem | null>(null);
   const [deleteActivity, setDeleteActivity] = useState<ActivityListItem | null>(null);
   const [createForm, setCreateForm] = useState({
-    relatedToType: 'Lead',
     relatedToId: '',
     activityType: 'Call',
     description: '',
@@ -187,23 +186,12 @@ export default function ActivityPage() {
     staleTime: 30000,
   });
 
-  const { data: customers } = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => customersApi.getAll(),
-    staleTime: 30000,
-  });
-
   // Mutations
   const createMutation = useMutation({
     mutationFn: () => {
-      // Determine relatedToType automatically based on whether ID is in customers or leads
-      const selectedId = Number(createForm.relatedToId);
-      const isLead = leads?.some(l => l.leadId === selectedId);
-      const relatedToType = isLead ? 0 : 1; // 0 = Lead, 1 = Customer
-
       return activitiesApi.create({
-        relatedToType,
-        relatedToId: selectedId,
+        relatedToType: 0, // Always Lead
+        relatedToId: Number(createForm.relatedToId),
         activityType: ActivityTypeMap[createForm.activityType] ?? 0,
         description: createForm.description.trim(),
         outcome: createForm.outcome.trim() || undefined,
@@ -219,7 +207,6 @@ export default function ActivityPage() {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
       setShowCreateForm(false);
       setCreateForm({
-        relatedToType: 'Lead',
         relatedToId: '',
         activityType: 'Call',
         description: '',
@@ -273,19 +260,6 @@ export default function ActivityPage() {
     );
   }, [activities]);
 
-  const relatedEntityOptions = useMemo(() => {
-    if (createForm.relatedToType === 'Lead') {
-      return (leads ?? []).map((lead) => ({
-        id: lead.leadId,
-        label: `${lead.companyName} (${lead.contactName})`,
-      }));
-    }
-
-    return (customers ?? []).map((customer) => ({
-      id: customer.customerId,
-      label: `${customer.companyName} (${customer.contactPerson})`,
-    }));
-  }, [createForm.relatedToType, leads, customers]);
 
   const handleCreateActivity = () => {
     if (!createForm.relatedToId || !createForm.activityDate || !createForm.description.trim()) {
@@ -460,19 +434,17 @@ export default function ActivityPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Name <span className="text-red-400">*</span>
+                  Lead <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={createForm.relatedToId}
                   onChange={(e) => setCreateForm((prev) => ({ ...prev, relatedToId: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
                 >
-                  <option value="">Select customer or lead</option>
-                  {[...(customers ?? []).map(c => ({ id: c.customerId, label: `${c.companyName} (${c.contactPerson})`, type: 'Customer' })),
-                     ...(leads ?? []).map(l => ({ id: l.leadId, label: `${l.companyName} (${l.contactName})`, type: 'Lead' }))
-                  ].map((entity) => (
-                    <option key={`${entity.type}-${entity.id}`} value={entity.id}>
-                      {entity.label}
+                  <option value="">Select lead</option>
+                  {(leads ?? []).map((lead) => (
+                    <option key={lead.leadId} value={lead.leadId}>
+                      {lead.companyName} ({lead.contactName})
                     </option>
                   ))}
                 </select>
@@ -480,7 +452,7 @@ export default function ActivityPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Type <span className="text-red-400">*</span>
+                  Activity Type <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={createForm.activityType}

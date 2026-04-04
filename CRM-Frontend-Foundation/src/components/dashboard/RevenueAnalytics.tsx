@@ -80,7 +80,7 @@ export function RevenueAnalyticsSection({ data }: RevenueAnalyticsSectionProps) 
             <MiniStat label="MRR" value={formatCurrency(data.monthlyRecurringRevenue)} color="text-emerald-600" />
             <MiniStat label="ARR" value={formatCurrency(data.annualRecurringRevenue)} color="text-blue-600" />
           </div>
-          <div className="mt-4 p-3 bg-indigo-50 rounded-xl">
+          {/* <div className="mt-4 p-3 bg-indigo-50 rounded-xl">
             <p className="text-xs font-medium text-indigo-700">Revenue Forecast</p>
             <div className="mt-2 space-y-1">
               <div className="flex justify-between text-sm">
@@ -92,7 +92,7 @@ export function RevenueAnalyticsSection({ data }: RevenueAnalyticsSectionProps) 
                 <span className="font-semibold text-indigo-700">{formatCurrency(data.projectedRevenue90Days)}</span>
               </div>
             </div>
-          </div>
+          </div> */}
         </DashboardCard>
 
         <DashboardCard

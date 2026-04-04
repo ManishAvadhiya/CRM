@@ -1,0 +1,663 @@
+CRM PROJECT - COMPLETE DASHBOARD IMPLEMENTATION AND METRICS EXPLANATION
+
+Generated on: 2026-03-27
+
+========================================================================
+1) WHICH DASHBOARDS ARE ACTUALLY ACTIVE IN THE APP
+========================================================================
+
+Based on route wiring in the frontend:
+
+- ManagementAdmin and Marketing users are routed to the Advanced Dashboard
+  page (Business Intelligence dashboard).
+- Partner users are routed to the Standard Dashboard page.
+
+There is also a separate PartnerDashboard page file in the codebase, but it
+is not wired to routes and is not currently used in runtime navigation.
+
+
+========================================================================
+2) STANDARD DASHBOARD (DashboardPage) - COMPLETE METRICS
+========================================================================
+
+This dashboard is visible to Partner users (and can be reused for others,
+depending on route logic). It combines:
+
+- API data from /dashboard/stats and /dashboard/recent-activities
+- Client-side computed metrics from fetched leads, orders, customers, users
+- Date-range filtering (week, month, year, custom)
+
+
+2.1 DATE FILTERS AND SCOPE
+
+- Presets:
+  - This Week: last 7 days (today included)
+  - This Month: first day of current month to current day
+  - This Year: Jan 1 to current day
+  - Custom: user-selected from and to dates
+
+- All range-based cards/charts use filtered datasets:
+  - filteredOrders by orderDate
+  - filteredLeads by createdAt
+  - filteredCustomers by createdAt
+  - filteredUsers by createdAt
+
+
+2.2 TOP KPI ROW (4 CARDS)
+
+Card 1:
+- Label:
+  - Partner view: My Leads
+  - Non-partner view: Leads in Range
+- Main value: filteredLeads.length
+- Sub value:
+  - converted leads = count where lead.status == Converted
+  - conversion percent = converted / total leads * 100
+
+Card 2:
+- Label:
+  - Partner: My Revenue
+  - Non-partner: Profit (Realized)
+- Main value: realizedRevenue
+- Formula (realizedRevenue):
+  - sum(totalAmount) for filtered orders with successful status
+  - successful status includes Confirmed / Delivered / PaymentReceived
+- Sub value: pendingRevenue (pending order pipeline)
+- Formula (pendingRevenue):
+  - sum(totalAmount) for filtered orders with Pending status
+
+Card 3:
+- Label:
+  - Partner: My Orders
+  - Non-partner: Order Win Rate
+- Main value:
+  - Partner: filteredOrders.length
+  - Non-partner: winRate
+- Formula (winRate):
+  - successful orders / total filtered orders * 100
+- Sub value:
+  - pending order count and delivered rate
+- Formula (deliveredRate):
+  - delivered orders / total filtered orders * 100
+  - delivered includes Delivered or PaymentReceived
+
+Card 4:
+- Label:
+  - Partner: My Earnings
+  - Non-partner: Lost Opportunity
+- Main value:
+  - Partner: partnerEarnings
+  - Non-partner: lostAmount
+- Formula (partnerEarnings):
+  - realizedRevenue * 10% (commission)
+- Formula (lostAmount):
+  - sum(estimatedValue) for leads with status Lost
+- Sub value:
+  - Partner: fixed 10% commission note
+  - Non-partner: count of lost leads in selected period
+
+
+2.3 SECOND KPI ROW (4 CARDS)
+
+Card 1 (Users Added):
+- Main value: filteredUsers.length
+- Sub value: usersThisMonth
+
+Card 2 (Customers Added):
+- Main value: filteredCustomers.length
+- Sub value:
+  - customersThisWeek
+  - customersThisMonth
+
+Card 3 (Lead Inflow):
+- Main value: leadsThisWeek
+- Sub value: leadsThisMonth
+
+Card 4 (Revenue This Year):
+- Main value: revenueThisYear
+- Formula:
+  - sum(totalAmount) for successful orders where orderDate >= Jan 1 current year
+- Sub value: lifetime tracked revenue from dashboard stats API
+  - stats.totalRevenue from /dashboard/stats
+
+
+2.4 CHARTS AND VISUAL METRICS
+
+Month-wise Trend chart (selected year):
+- Per month metrics:
+  - revenue: rounded sum of successful orders in month
+  - orders: count of filtered orders in month
+  - leads: count of filtered leads in month
+  - customers: count of filtered customers in month
+
+Lead Outcome Mix pie chart:
+- New count
+- Demo count
+- Converted count
+- Lost count
+
+Year-wise Business Trend chart (last 5 years):
+- For each year:
+  - revenue: rounded successful order revenue
+  - leads: lead count
+  - orders: order count
+
+Lead Velocity chart:
+- Uses monthly series and compares:
+  - leads
+  - customers
+
+
+2.5 ACTIONABLE INSIGHTS PANEL METRICS
+
+Insight 1 (Conversion Health):
+- Uses convRate
+- Strong if >= 30%, warning if lower
+
+Insight 2 (Revenue Exposure):
+- Uses pendingRevenue
+- Warns if pending revenue > 0
+
+Insight 3 (Retention Watch):
+- Uses stats.upcomingRenewals30Days from /dashboard/stats
+- Warns if renewals due in next 30 days > 0
+
+Insight 4 (Lost Opportunity):
+- Uses lost lead count and lostAmount
+
+
+2.6 RECENT ACTIVITY FEED
+
+- Source: /dashboard/recent-activities?count=12
+- Sorted by newest activity date first
+- Partner role receives only own activities; other roles receive all activities
+
+
+2.7 SERVER METRICS USED BY STANDARD DASHBOARD (/dashboard/stats)
+
+For Partner role, all counts are scoped to CreatedBy == current user where
+applicable. For non-partner roles, values are global.
+
+Returned fields and formulas:
+
+- totalLeads: count of leads
+- newLeads: count where status == New
+- demoLeads: count where status == Demo
+- convertedLeads: count where status == Converted
+- lostLeads: count where status == Lost
+- leadConversionRate: convertedLeads / totalLeads * 100
+
+- totalCustomers: customer count
+
+- totalOrders: order count
+- pendingOrders: count where order status == Pending
+- confirmedOrders: count where order status == Confirmed
+- deliveredOrders: count where order status == PaymentReceived
+
+- totalSubscriptions: subscription count
+- activeSubscriptions: count where status == Active
+- expiredSubscriptions: count where status == Expired
+
+- totalRevenue:
+  - sum(totalAmount) for orders with status Confirmed or PaymentReceived
+- totalEarnings:
+  - Partner: totalRevenue * 10%
+  - Non-partner: 0
+
+- upcomingRenewals30Days:
+  - active subscriptions with renewalDate between today and today+30 days
+
+- upcomingRenewals90Days:
+  - active subscriptions with renewalDate between today and today+90 days
+
+
+========================================================================
+3) ADVANCED DASHBOARD (AdvancedDashboardPage) - COMPLETE METRICS
+========================================================================
+
+This dashboard is shown to ManagementAdmin and Marketing users.
+
+Main data source:
+- /dashboard/advanced-stats
+
+Response bundles 11 analytics domains:
+- revenue
+- customers
+- pipeline
+- products
+- partners
+- subscriptions
+- activities
+- geographic
+- timeBased
+- financialHealth
+- alerts
+
+
+3.1 OVERVIEW TAB
+
+Overview includes sections:
+- Revenue Analytics
+- Customer Analytics
+- Sales Pipeline
+- Alerts
+
+
+3.2 REVENUE ANALYTICS METRICS
+
+Core KPIs:
+- totalRevenue: sum of confirmed/paid order amounts (all-time)
+- revenueThisMonth: confirmed/paid order sum since first day of current month
+- revenueLastMonth: confirmed/paid order sum in previous month
+- revenueThisQuarter: confirmed/paid order sum in current quarter
+- revenueThisYear: confirmed/paid order sum since Jan 1
+- averageOrderValue: totalRevenue / confirmed/paid order count
+- pendingRevenue: sum of pending order amounts
+
+Recurring revenue:
+- monthlyRecurringRevenue (MRR): sum(active subscriptions annualFee / 12)
+- annualRecurringRevenue (ARR): sum(active subscriptions annualFee)
+
+Growth:
+- revenueGrowthMoM:
+  - ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100
+- revenueGrowthYoY:
+  - ((revenueThisYear - lastYearRevenue) / lastYearRevenue) * 100
+
+Forecast:
+- projectedRevenue30Days:
+  - pendingRevenue + sum(active subscription annualFee with renewalDate <= now+30)
+- projectedRevenue90Days:
+  - pendingRevenue + sum(active subscription annualFee with renewalDate <= now+90)
+
+Trend data:
+- monthlyRevenue (last 12 months):
+  - revenue, orderCount, growthPercent month over month
+
+Payment breakdown:
+- status buckets: Paid, Partial, Pending
+- for each bucket:
+  - count, amount, percentage of total confirmed/paid order amount
+
+
+3.3 CUSTOMER ANALYTICS METRICS
+
+Customer volume:
+- totalCustomers
+- activeCustomers: customers with at least one active subscription
+- dormantCustomers: totalCustomers - customers with any order in last 6 months
+- newCustomersThisMonth
+- newCustomersThisYear
+
+Value metrics:
+- averageCustomerLifetimeValue:
+  - average confirmed/paid revenue grouped per customer
+- medianCustomerLifetimeValue:
+  - median of per-customer confirmed/paid revenue
+
+Retention behavior:
+- customerRetentionRate:
+  - subscriptions with renewalCount > 0 / total subscriptions * 100
+- churnRate:
+  - cancelled subscriptions / total subscriptions * 100
+- repeatPurchaseRate:
+  - customers with >1 order / total customers * 100
+- averageCustomerAgeMonths:
+  - average months since customer CreatedAt
+
+Top customers table:
+- customerId, companyName, industry
+- totalRevenue (confirmed/paid)
+- totalOrders
+- activeSubscriptions
+- customerSince
+- healthScore:
+  - Healthy if any active subscription
+  - At Risk if any expired subscription
+  - New otherwise
+
+Customer segments:
+- Platinum (>= 100000)
+- Gold (50000 to <100000)
+- Silver (10000 to <50000)
+- Bronze (<10000)
+- Each segment has count, totalRevenue, averageRevenue, percentage
+
+Industry breakdown:
+- grouped by customer industry
+- customerCount
+- totalRevenue from confirmed/paid orders
+- averageOrderValue
+
+
+3.4 SALES PIPELINE METRICS
+
+Pipeline KPIs:
+- totalPipelineValue:
+  - sum(estimatedValue) for leads in New or Demo
+- totalLeadsInPipeline:
+  - lead count in New or Demo
+- averageDealSize:
+  - average estimatedValue for Converted leads
+- averageSalesCycleDays:
+  - average(ConvertedDate - CreatedAt) for converted leads with ConvertedDate
+
+Conversion and loss:
+- winRate: converted leads / total leads * 100
+- lossRate: lost leads / total leads * 100
+- demoToConversionRate:
+  - converted leads / (demo + converted leads) * 100
+
+Pipeline stages:
+- New: count, value, conversionToNext
+- Demo: count, value, conversionToNext = demoToConversionRate
+- Converted: count, value
+- Lost: count, value
+
+Lead source performance (group by source):
+- leadCount
+- convertedCount
+- conversionRate
+- totalRevenue (sum of converted lead estimatedValue)
+- averageDealSize
+- averageSalesCycleDays
+
+Lead rating performance (group by rating):
+- count
+- convertedCount
+- conversionRate
+- averageValue
+
+Lost reason analysis:
+- grouped by lostReason
+- count
+- lostValue (sum estimatedValue)
+- percentage among lost leads with reason
+
+
+3.5 PRODUCT ANALYTICS METRICS
+
+Product KPIs:
+- totalProducts (total variants)
+- activeProducts
+- totalCustomizationRevenue:
+  - sum(customizationAmount) from confirmed/paid orders
+- averageDiscountPercent:
+  - average discountPercent among discounted orders
+- totalDiscountGiven:
+  - sum(discountAmount) among discounted orders
+
+Product performance per variant:
+- variantId, variantName, variantCode
+- totalOrders (confirmed/paid)
+- activeSubscriptions
+- totalRevenue (confirmed/paid)
+- averageOrderValue (confirmed/paid)
+- marketShare:
+  - variant confirmed/paid revenue / total confirmed/paid revenue * 100
+
+License type distribution (group by userLicenseType):
+- count
+- revenue
+- percentage of total counted license orders
+
+
+3.6 PARTNER PERFORMANCE METRICS
+
+Partner KPIs:
+- totalPartners (users with role Partner)
+- activePartners (isActive true)
+- totalPartnerRevenue
+- totalCommissionsPaid
+
+Top partners leaderboard:
+- rank (by totalRevenue descending)
+- name, email
+- leadsCreated
+- leadsConverted
+- conversionRate = leadsConverted / leadsCreated * 100
+- totalOrders (confirmed/paid partner orders)
+- totalRevenue
+- totalCommission = totalRevenue * 10%
+
+Partner activity (current month):
+- leadsThisMonth
+- ordersThisMonth
+- revenueThisMonth
+- lastActivityDate
+- activityLevel:
+  - High if leadsThisMonth >= 5 or ordersThisMonth >= 2
+  - Medium if leadsThisMonth >= 2 or ordersThisMonth >= 1
+  - Low otherwise
+
+Monthly partner revenue trend (last 12 months):
+- totalRevenue
+- totalCommission
+- orderCount
+
+
+3.7 SUBSCRIPTION ANALYTICS METRICS
+
+Subscription KPIs:
+- totalSubscriptions
+- activeSubscriptions
+- expiredSubscriptions
+- cancelledSubscriptions
+- suspendedSubscriptions
+- pendingRenewalSubscriptions
+- subscriptionRenewalRate = renewed subscriptions / total subscriptions * 100
+  - renewed = renewalCount > 0
+- averageSubscriptionDuration:
+  - average years between currentPeriodEnd and startDate for active/expired
+- autoRenewEnabled
+- autoRenewDisabled
+- totalSubscriptionRevenue = sum(annualFee)
+- averageAnnualFee
+- churnRate = cancelledSubscriptions / totalSubscriptions * 100
+
+Status breakdown:
+- for each status (Active, Expired, Cancelled, Suspended, Pending Renewal):
+  - count, revenue, percentage
+
+Renewal forecast periods:
+- Next 7/30/60/90 Days:
+  - subscriptionCount (active, renewing within period)
+  - expectedRevenue (sum annualFee)
+  - atRiskCount (same set with autoRenew == false)
+
+Cancellation reasons:
+- grouped cancelled subscriptions by cancellationReason
+- count
+- lostRevenue
+- percentage among cancelled-with-reason set
+
+Suspension reasons:
+- grouped suspended subscriptions by suspensionReason
+- count
+- percentage
+
+Renewal distribution:
+- grouped by renewalCount
+- subscriptionCount
+- percentage
+
+
+3.8 ACTIVITY ANALYTICS METRICS
+
+Activity KPIs:
+- totalActivities
+- completedActivities
+- pendingActivities (Planned + InProgress)
+- overdueActivities:
+  - dueDate < now and status not Completed/Cancelled
+- completionRate = completed / total * 100
+- averageActivitiesPerLead:
+  - activities related to leads / total lead count
+- averageActivitiesPerCustomer:
+  - activities related to customers / total customer count
+
+Activity type breakdown (group by activity type):
+- count
+- completed
+- completionRate
+- averageDuration
+
+Weekly trend (last 8 weeks):
+- planned count
+- completed count
+- cancelled count
+
+User productivity (top 10 groups by activity volume):
+- userName
+- totalActivities
+- completedActivities
+- completionRate
+
+
+3.9 GEOGRAPHIC ANALYTICS METRICS
+
+Revenue by state (top 15):
+- state
+- customerCount
+- totalRevenue from confirmed/paid orders
+- orderCount
+- averageOrderValue
+
+Revenue by country:
+- country
+- customerCount
+- totalRevenue from confirmed/paid orders
+
+Top cities (top 10):
+- city, state
+- customerCount
+- totalRevenue from confirmed/paid orders
+
+
+3.10 TIME-BASED ANALYTICS METRICS
+
+Quarterly performance (last 8 quarters):
+- year, quarter
+- revenue (confirmed/paid orders in quarter)
+- orderCount
+- leadCount
+- growthPercent vs previous quarter revenue
+
+Day-of-week performance (Sunday to Saturday):
+- orderCount
+- leadCount
+- conversionCount (lead convertedDate day)
+- averageOrderValue
+
+Year-over-year comparisons:
+- Revenue (current year vs previous year)
+- Leads (current year vs previous year)
+- Orders (current year vs previous year)
+- Customers (current year vs previous year)
+- each includes growthPercent
+
+Operational time metrics:
+- averageTimeToFirstOrderDays:
+  - average days from customer creation to first order date
+- averageOrderFulfillmentDays:
+  - average days from orderDate to actualDeliveryDate
+
+
+3.11 FINANCIAL HEALTH METRICS
+
+Financial KPIs:
+- totalOutstandingAmount:
+  - sum totalAmount for orders where paymentStatus != Paid
+- outstandingWithin30Days
+- outstanding30To60Days
+- outstandingOver60Days
+  - all split by age from orderDate
+- totalTaxCollected:
+  - sum taxAmount from confirmed/paid orders
+- totalDiscountsGiven:
+  - sum discountAmount for all orders
+- revenueAtRisk:
+  - sum annualFee of active subscriptions expiring <= 90 days with autoRenew false
+
+Top outstanding customers:
+- customerId, companyName
+- outstandingAmount
+- pendingOrderCount
+- daysOutstanding (max days overdue in grouped orders)
+
+Cash flow projection:
+- Next 30/60/90 days:
+  - renewalRevenue
+  - newBusinessRevenue
+  - expectedInflow = renewalRevenue + newBusinessRevenue
+
+
+3.12 ALERTS AND ACTION ITEMS METRICS
+
+Alert groups:
+- expiringSubscriptions (active, renewalDate <= 30 days)
+- overduePayments (payment not paid and order older than 30 days)
+- staleLeads (New/Demo and UpdatedAt older than 14 days)
+- overdueActivities (dueDate passed, not completed/cancelled)
+
+Each alert item includes:
+- type
+- severity
+- title
+- description
+- relatedId
+- relatedEntity
+- dueDate
+- amount (if applicable)
+
+Severity rules:
+- expiring subscriptions:
+  - Critical if expiring within 7 days, else Warning
+- overdue payments:
+  - Critical if >60 days overdue, else Warning
+- stale leads:
+  - Warning if inactivity >30 days, else Info
+- overdue activities:
+  - Warning if >7 days overdue, else Info
+
+Alert counters:
+- criticalAlertCount
+- warningAlertCount
+- infoAlertCount
+
+
+========================================================================
+4) API ENDPOINTS SUPPORTING DASHBOARD METRICS
+========================================================================
+
+Implemented dashboard endpoints:
+
+- GET /api/dashboard/stats
+- GET /api/dashboard/recent-activities
+- GET /api/dashboard/advanced-stats
+
+- GET /api/dashboard/revenue-analytics
+- GET /api/dashboard/customer-analytics
+- GET /api/dashboard/sales-pipeline
+- GET /api/dashboard/product-analytics
+- GET /api/dashboard/partner-performance
+- GET /api/dashboard/subscription-analytics
+- GET /api/dashboard/activity-analytics
+- GET /api/dashboard/geographic-analytics
+- GET /api/dashboard/time-based-analytics
+- GET /api/dashboard/financial-health
+- GET /api/dashboard/alerts
+
+
+========================================================================
+5) IMPORTANT ROLE BEHAVIOR NOTE
+========================================================================
+
+- Standard /dashboard/stats is role-aware and scopes Partner metrics to their
+  own data.
+- Advanced /dashboard/advanced-stats currently computes global analytics and
+  does not apply Partner scoping in its internal calculators.
+- In current routing, Partners do not get the Advanced dashboard tabbed page.
+
+
+END OF DOCUMENT
